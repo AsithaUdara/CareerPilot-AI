@@ -1,0 +1,67 @@
+@use "./tokens" as *;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: $ink;
+  font-family: $font-body;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(31, 122, 239, 0.18), transparent 32%),
+    radial-gradient(circle at 88% 8%, rgba(18, 163, 154, 0.16), transparent 28%),
+    linear-gradient(160deg, $bg-0, $bg-1);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+h1,
+h2,
+h3 {
+  font-family: $font-display;
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 1.55rem;
+}
+
+p {
+  margin: 0;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-16px);
+  }
+}

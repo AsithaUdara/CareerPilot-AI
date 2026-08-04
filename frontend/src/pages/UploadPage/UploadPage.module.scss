@@ -1,0 +1,32 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.timeline {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+
+  li {
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.45);
+    border-left: 3px solid rgba(27, 36, 51, 0.15);
+  }
+}
+
+.done {
+  border-left-color: #12a39a !important;
+  background: rgba(18, 163, 154, 0.12) !important;
+}

@@ -1,0 +1,24 @@
+@use "@/styles/tokens" as *;
+
+.chip {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+}
+
+.name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.detail {
+  color: $muted;
+  font-size: 0.75rem;
+  margin: 0;
+}

@@ -1,0 +1,30 @@
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #334155;
+  border-radius: 14px;
+  padding: 11px 12px;
+  cursor: pointer;
+  transition: background 180ms ease, transform 180ms ease, color 180ms ease;
+
+  &:hover {
+    background: rgba(31, 122, 239, 0.08);
+    transform: translateX(2px);
+  }
+}
+
+.active {
+  background: rgba(31, 122, 239, 0.14);
+  color: #1559c5;
+  font-weight: 600;
+}
+
+.icon {
+  width: 22px;
+  text-align: center;
+  opacity: 0.8;
+}

@@ -1,0 +1,29 @@
+@use "@/styles/tokens" as *;
+
+.wrap {
+  position: relative;
+  margin-top: 16px;
+
+  input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
+.label {
+  display: grid;
+  gap: 4px;
+  padding: 28px 18px;
+  text-align: center;
+  width: 100%;
+  border-radius: 14px;
+  border: 1px dashed $line;
+  background: rgba(255, 255, 255, 0.7);
+
+  span {
+    color: $muted;
+    font-size: 0.85rem;
+  }
+}

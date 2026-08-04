@@ -1,0 +1,50 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+
+.gapList {
+  display: grid;
+  gap: 10px;
+}
+
+.gapItem {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.rank {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(31, 122, 239, 0.12);
+  color: #1559c5;
+  font-weight: 700;
+}
+
+.gapName {
+  font-weight: 600;
+  margin: 0 0 2px;
+}
+
+.meter {
+  grid-column: 2;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(27, 36, 51, 0.08);
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #1f7aef, #12a39a);
+  }
+}

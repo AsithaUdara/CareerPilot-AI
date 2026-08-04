@@ -1,0 +1,30 @@
+@use "@/styles/tokens" as *;
+
+.topbar {
+  @include glass;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 22px;
+  z-index: 1;
+}
+
+.subtitle {
+  color: $muted;
+  margin: 0;
+}
+
+.right {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+@media (max-width: 720px) {
+  .topbar,
+  .right {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

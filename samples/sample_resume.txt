@@ -1,0 +1,22 @@
+John Doe
+Aspiring Backend Developer
+Email: john.doe@example.com | Phone: +1-555-0100
+
+SUMMARY
+Computer Science graduate with hands-on experience building REST APIs using Python and FastAPI.
+Comfortable with SQL databases, Git, and collaborative development.
+
+SKILLS
+Python, FastAPI, SQL, Git, React basics
+
+EDUCATION
+BSc in Computer Science - University of Moratuwa
+
+PROJECTS
+- Inventory API: Built a REST API with FastAPI and SQL for stock management.
+- Student Portal: Collaborated on authentication and CRUD endpoints.
+
+EXPERIENCE
+Intern Software Engineer - Tech Lab (6 months)
+- Developed backend endpoints and wrote unit tests for core flows.
+- Used Git for version control and participated in code reviews.

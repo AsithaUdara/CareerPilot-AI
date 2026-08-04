@@ -1,0 +1,13 @@
+@use "@/styles/tokens" as *;
+
+.mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  color: white;
+  font-family: $font-display;
+  font-weight: 700;
+  background: linear-gradient(145deg, $accent, $accent-2);
+}

@@ -1,0 +1,10 @@
+@use "@/styles/tokens" as *;
+
+.pill {
+  padding: 8px 12px;
+  font-size: 0.84rem;
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+}

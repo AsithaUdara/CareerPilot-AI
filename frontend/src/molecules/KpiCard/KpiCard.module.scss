@@ -1,0 +1,43 @@
+@use "@/styles/tokens" as *;
+
+.card {
+  @include glass;
+  @include fade-up;
+  padding: 18px;
+  overflow: hidden;
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: auto -20% -40% auto;
+    width: 120px;
+    height: 120px;
+    border-radius: 999px;
+    opacity: 0.22;
+  }
+}
+
+.blue::after { background: $accent; }
+.teal::after { background: $accent-2; }
+.amber::after { background: $amber; }
+.rose::after { background: $rose; }
+
+.label {
+  color: $muted;
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.value {
+  margin: 8px 0 4px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-family: $font-display;
+}
+
+.hint {
+  color: $muted;
+  font-size: 0.78rem;
+  margin: 0;
+}

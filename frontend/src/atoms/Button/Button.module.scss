@@ -1,0 +1,38 @@
+@use "@/styles/tokens" as *;
+
+.button {
+  border: 0;
+  border-radius: 12px;
+  padding: 11px 16px;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.primary {
+  color: white;
+  background: linear-gradient(135deg, $accent, $accent-2);
+  box-shadow: 0 10px 24px rgba(31, 122, 239, 0.28);
+}
+
+.secondary {
+  color: #1559c5;
+  background: rgba(31, 122, 239, 0.12);
+}
+
+.block {
+  width: 100%;
+}
+
+.sm {
+  padding: 8px 12px;
+  font-size: 0.82rem;
+}

@@ -1,0 +1,57 @@
+# --- Secrets / local env ---
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+frontend/.env.local
+
+# --- Python / backend ---
+backend/.venv/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.log
+
+# --- Celery / local queues ---
+backend/celery_broker.sqlite
+backend/celery_results.sqlite
+backend/celerybeat-schedule*
+backend/*.sqlite
+
+# --- App runtime data ---
+backend/uploads/
+backend/*.db
+backend/test_careerpilot.db
+*.db
+
+# --- Node / frontend ---
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+*.tsbuildinfo
+
+# --- IDE / OS ---
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- Tools / caches ---
+tools/redis/
+*.zip
+.cursor/

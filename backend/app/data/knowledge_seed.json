@@ -1,0 +1,83 @@
+{
+  "jobs": [
+    {
+      "role_key": "backend developer",
+      "title": "Junior Backend Developer",
+      "company": "NovaSoft",
+      "required_skills": ["Python", "FastAPI", "SQL", "Docker", "Git", "Automated Testing"],
+      "description": "Build REST APIs, write SQL queries, containerize services, and add automated tests.",
+      "seniority": "junior"
+    },
+    {
+      "role_key": "backend developer",
+      "title": "Associate API Engineer",
+      "company": "CloudBridge",
+      "required_skills": ["Python", "SQL", "Docker", "CI/CD", "AWS", "Automated Testing"],
+      "description": "Own API endpoints, CI pipelines, and cloud deployment basics for backend services.",
+      "seniority": "junior"
+    },
+    {
+      "role_key": "backend developer",
+      "title": "Backend Intern - Platform",
+      "company": "ScaleWorks",
+      "required_skills": ["Python", "SQL", "Git", "REST APIs", "Docker"],
+      "description": "Support platform APIs and learn production backend practices with mentorship.",
+      "seniority": "intern"
+    },
+    {
+      "role_key": "frontend developer",
+      "title": "Frontend Engineer",
+      "company": "PixelCraft",
+      "required_skills": ["JavaScript", "React", "TypeScript", "CSS", "Testing", "Git"],
+      "description": "Ship UI features in React/TypeScript with accessible components and tests.",
+      "seniority": "junior"
+    },
+    {
+      "role_key": "frontend developer",
+      "title": "UI Developer",
+      "company": "DesignOps",
+      "required_skills": ["JavaScript", "React", "CSS", "Design Systems", "Git"],
+      "description": "Implement design-system components and interactive product screens.",
+      "seniority": "junior"
+    },
+    {
+      "role_key": "data analyst",
+      "title": "Junior Data Analyst",
+      "company": "InsightLab",
+      "required_skills": ["SQL", "Python", "Excel", "Power BI", "Statistics"],
+      "description": "Analyze datasets, build dashboards, and present actionable insights.",
+      "seniority": "junior"
+    }
+  ],
+  "skills": [
+    {"role_key": "backend developer", "skill": "Python", "priority": 1.0, "guidance": "Core language for API and service logic."},
+    {"role_key": "backend developer", "skill": "FastAPI", "priority": 0.95, "guidance": "Common modern Python API framework."},
+    {"role_key": "backend developer", "skill": "SQL", "priority": 0.95, "guidance": "Required for relational data access."},
+    {"role_key": "backend developer", "skill": "Docker", "priority": 0.9, "guidance": "Expected for local/prod parity and deployment."},
+    {"role_key": "backend developer", "skill": "Automated Testing", "priority": 0.9, "guidance": "Unit/integration tests are hiring filters."},
+    {"role_key": "backend developer", "skill": "Git", "priority": 0.85, "guidance": "Collaboration and pull-request workflow."},
+    {"role_key": "backend developer", "skill": "AWS", "priority": 0.7, "guidance": "Cloud basics improve readiness for production roles."},
+    {"role_key": "backend developer", "skill": "CI/CD", "priority": 0.75, "guidance": "Pipeline literacy speeds onboarding."},
+    {"role_key": "frontend developer", "skill": "JavaScript", "priority": 1.0, "guidance": "Language foundation for browser apps."},
+    {"role_key": "frontend developer", "skill": "React", "priority": 0.95, "guidance": "Most requested UI framework for juniors."},
+    {"role_key": "frontend developer", "skill": "TypeScript", "priority": 0.85, "guidance": "Strongly preferred in product teams."},
+    {"role_key": "frontend developer", "skill": "CSS", "priority": 0.8, "guidance": "Layout and responsive styling fundamentals."},
+    {"role_key": "frontend developer", "skill": "Testing", "priority": 0.75, "guidance": "Component and interaction tests."},
+    {"role_key": "frontend developer", "skill": "Git", "priority": 0.85, "guidance": "Team collaboration essential."},
+    {"role_key": "data analyst", "skill": "SQL", "priority": 1.0, "guidance": "Primary query language for analysis roles."},
+    {"role_key": "data analyst", "skill": "Python", "priority": 0.85, "guidance": "Used for data wrangling and automation."},
+    {"role_key": "data analyst", "skill": "Excel", "priority": 0.8, "guidance": "Still widely used for ad-hoc analysis."},
+    {"role_key": "data analyst", "skill": "Power BI", "priority": 0.75, "guidance": "Dashboarding and stakeholder reporting."},
+    {"role_key": "data analyst", "skill": "Statistics", "priority": 0.7, "guidance": "Supports valid insight generation."}
+  ],
+  "knowledge_docs": [
+    {"role_key": "backend developer", "category": "guidance", "content": "Backend roles usually require API design, SQL fluency, testing, and deployment fundamentals."},
+    {"role_key": "backend developer", "category": "guidance", "content": "Docker and automated testing are common screening filters for junior backend hiring."},
+    {"role_key": "backend developer", "category": "guidance", "content": "Strong resumes show measurable API outcomes, data modeling examples, and CI familiarity."},
+    {"role_key": "frontend developer", "category": "guidance", "content": "Frontend roles prioritize React or similar frameworks, JavaScript fundamentals, and UI state management."},
+    {"role_key": "frontend developer", "category": "guidance", "content": "Portfolio projects with measurable UX outcomes improve interview conversion."},
+    {"role_key": "frontend developer", "category": "guidance", "content": "Hiring managers look for TypeScript usage and accessible component patterns."},
+    {"role_key": "data analyst", "category": "guidance", "content": "Data analyst readiness centers on SQL depth, dashboard storytelling, and clean metric definitions."},
+    {"role_key": "data analyst", "category": "guidance", "content": "Projects that combine SQL + visualization + business recommendation stand out."}
+  ]
+}

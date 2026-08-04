@@ -1,0 +1,58 @@
+@use "@/styles/tokens" as *;
+
+.sidebar {
+  @include glass;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 16px;
+  min-height: calc(100vh - 36px);
+  z-index: 1;
+}
+
+.brand {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.brandName {
+  margin: 0;
+  font-weight: 700;
+  font-family: $font-display;
+}
+
+.brandSub {
+  color: $muted;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.navLabel {
+  color: $muted;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 10px 8px;
+}
+
+.nav {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+}
+
+.footer {
+  margin-top: 18px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.footerTitle {
+  font-weight: 700;
+  margin: 0;
+}

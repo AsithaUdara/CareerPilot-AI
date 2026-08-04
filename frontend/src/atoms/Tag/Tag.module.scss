@@ -1,0 +1,9 @@
+@use "@/styles/tokens" as *;
+
+.tag {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(31, 122, 239, 0.1);
+  color: #1559c5;
+  font-size: 0.8rem;
+}
