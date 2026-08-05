@@ -4,6 +4,7 @@ import { Panel } from "@/atoms/Panel";
 import { Select } from "@/atoms/Select";
 import { Text } from "@/atoms/Text";
 import { analyzeCandidate, listReports, uploadResume } from "@/api/client";
+import { IT_TARGET_ROLES, SENIORITY_LEVELS } from "@/constants/itRoles";
 import { FileDrop } from "@/molecules/FileDrop";
 import { TagList } from "@/molecules/TagList";
 import { useAppState } from "@/state/AppState";
@@ -34,6 +35,18 @@ const PIPELINE_STAGES = [
   { key: "report_composition", icon: "📊", label: "Report Composition", detail: "Explainable final report" }
 ];
 
+const STACK_OPTIONS = [
+  "Python/FastAPI",
+  "Node.js/Express",
+  "React/TypeScript",
+  "SQL/PostgreSQL",
+  "Docker/Kubernetes",
+  "AWS/Cloud",
+  "Testing/QA Automation",
+  "Data Pipelines/Spark",
+  "Mobile (React Native/Flutter)"
+];
+
 export function UploadPage() {
   const {
     file,
@@ -42,6 +55,14 @@ export function UploadPage() {
     setCandidateId,
     targetRole,
     setTargetRole,
+    seniorityLevel,
+    setSeniorityLevel,
+    stackEmphasis,
+    setStackEmphasis,
+    githubUrl,
+    setGithubUrl,
+    linkedinUrl,
+    setLinkedinUrl,
     profile,
     setProfile,
     report,
@@ -59,7 +80,10 @@ export function UploadPage() {
     try {
       setBusy(true);
       setStatus("Uploading resume and extracting structured profile...");
-      const data = await uploadResume(file);
+      const data = await uploadResume(file, {
+        githubUrl: githubUrl.trim(),
+        linkedinUrl: linkedinUrl.trim()
+      });
       setCandidateId(data.candidate_id);
       if (data.profile) setProfile(data.profile);
       setStatus("Resume uploaded. Review the extracted profile, then run analysis.");
@@ -75,12 +99,18 @@ export function UploadPage() {
     try {
       setBusy(true);
       setStatus("Dispatching multi-agent analysis job...");
-      const data = await analyzeCandidate(candidateId, targetRole, (progressJob) => {
-        setJob(progressJob);
-        setStatus(
-          `${STAGE_LABELS[progressJob.stage] || progressJob.stage} (${progressJob.progress}%)`
-        );
-      });
+      const data = await analyzeCandidate(
+        candidateId,
+        targetRole,
+        seniorityLevel,
+        stackEmphasis,
+        (progressJob) => {
+          setJob(progressJob);
+          setStatus(
+            `${STAGE_LABELS[progressJob.stage] || progressJob.stage} (${progressJob.progress}%)`
+          );
+        }
+      );
       setReport(data);
       setProfile(data.profile);
       const saved = await listReports(candidateId);
@@ -113,12 +143,66 @@ export function UploadPage() {
           pipeline matches live jobs, gaps, learning, and interview prep.
         </Text>
         <FileDrop fileName={file?.name} onChange={setFile} />
-        <Select
-          label="Target role"
-          value={targetRole}
-          onChange={(e) => setTargetRole(e.target.value)}
-          options={["Backend Developer", "Frontend Developer", "Data Analyst"]}
-        />
+        <div className={styles.formRow}>
+          <Select
+            label="Target IT role"
+            value={targetRole}
+            onChange={(e) => setTargetRole(e.target.value)}
+            options={[...IT_TARGET_ROLES]}
+          />
+          <Select
+            label="Seniority level"
+            value={seniorityLevel}
+            onChange={(e) => setSeniorityLevel(e.target.value)}
+            options={[...SENIORITY_LEVELS]}
+          />
+        </div>
+        <div className={styles.stackBlock}>
+          <span className={styles.fieldLabel}>Stack emphasis (optional)</span>
+          <div className={styles.stackChips}>
+            {STACK_OPTIONS.map((option) => {
+              const active = stackEmphasis.includes(option);
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  className={`${styles.stackChip} ${active ? styles.stackChipActive : ""}`}
+                  onClick={() =>
+                    setStackEmphasis(
+                      active
+                        ? stackEmphasis.filter((item) => item !== option)
+                        : [...stackEmphasis, option].slice(0, 5)
+                    )
+                  }
+                >
+                  {option}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className={styles.formRow}>
+          <label className={styles.field}>
+            <span className={styles.fieldLabel}>GitHub URL (optional)</span>
+            <input
+              className={styles.input}
+              type="url"
+              placeholder="https://github.com/yourusername"
+              value={githubUrl}
+              onChange={(e) => setGithubUrl(e.target.value)}
+            />
+          </label>
+          <label className={styles.field}>
+            <span className={styles.fieldLabel}>LinkedIn URL (optional)</span>
+            <input
+              className={styles.input}
+              type="url"
+              placeholder="https://linkedin.com/in/yourprofile"
+              value={linkedinUrl}
+              onChange={(e) => setLinkedinUrl(e.target.value)}
+            />
+          </label>
+        </div>
         <div className={styles.actions}>
           <Button variant="secondary" onClick={onUpload} disabled={!file || busy}>
             Upload Resume
@@ -158,6 +242,21 @@ export function UploadPage() {
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
+              </div>
+            )}
+            {(profile.github_url || profile.linkedin_url) && (
+              <div className={styles.previewBlock}>
+                <p className={styles.previewLabel}>Portfolio links</p>
+                {profile.github_url && (
+                  <a className={styles.link} href={profile.github_url} target="_blank" rel="noreferrer">
+                    GitHub →
+                  </a>
+                )}
+                {profile.linkedin_url && (
+                  <a className={styles.link} href={profile.linkedin_url} target="_blank" rel="noreferrer">
+                    LinkedIn →
+                  </a>
+                )}
               </div>
             )}
             {profile.projects.length > 0 && (

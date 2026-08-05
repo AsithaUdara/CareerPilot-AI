@@ -53,6 +53,21 @@ export function ReadinessPage() {
           <p className={styles.blockLabel}>Skills</p>
           <TagList items={report.profile.skills} />
         </div>
+        {(report.profile.github_url || report.profile.linkedin_url) && (
+          <div className={styles.block}>
+            <p className={styles.blockLabel}>Portfolio</p>
+            {report.profile.github_url && (
+              <a href={report.profile.github_url} target="_blank" rel="noreferrer">
+                GitHub profile
+              </a>
+            )}
+            {report.profile.linkedin_url && (
+              <a href={report.profile.linkedin_url} target="_blank" rel="noreferrer">
+                LinkedIn profile
+              </a>
+            )}
+          </div>
+        )}
         {report.profile.education.length > 0 && (
           <div className={styles.block}>
             <p className={styles.blockLabel}>Education</p>

@@ -10,7 +10,14 @@ from app.workers.celery_app import celery_app
 
 
 @celery_app.task(name="careerpilot.run_analysis_pipeline", bind=True)
-def run_analysis_pipeline(self, job_id: str, candidate_id: str, target_role: str) -> dict:
+def run_analysis_pipeline(
+    self,
+    job_id: str,
+    candidate_id: str,
+    target_role: str,
+    seniority_level: str = "Junior",
+    stack_emphasis: list[str] | None = None,
+) -> dict:
     """Event-driven pipeline entrypoint executed by Celery worker."""
     orchestrator = AgentOrchestrator()
 
@@ -52,7 +59,14 @@ def run_analysis_pipeline(self, job_id: str, candidate_id: str, target_role: str
             )
             session.commit()
 
-            report = orchestrator.run(session, profile, target_role, on_progress=on_progress)
+            report = orchestrator.run(
+                session,
+                profile,
+                target_role,
+                seniority_level=seniority_level,
+                stack_emphasis=stack_emphasis or [],
+                on_progress=on_progress,
+            )
             assert report.report_id
             save_report(session, report.report_id, report)
             update_job_progress(

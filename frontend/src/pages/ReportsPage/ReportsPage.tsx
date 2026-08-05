@@ -3,7 +3,7 @@ import { Button } from "@/atoms/Button";
 import { Chip } from "@/atoms/Chip";
 import { Panel } from "@/atoms/Panel";
 import { Text } from "@/atoms/Text";
-import { getReport, listReports } from "@/api/client";
+import { exportReportPdf, getAgent, getReport, listReports } from "@/api/client";
 import { EmptyState } from "@/molecules/EmptyState";
 import { useAppState } from "@/state/AppState";
 import styles from "./ReportsPage.module.scss";
@@ -20,6 +20,7 @@ export function ReportsPage() {
     report
   } = useAppState();
   const [loading, setLoading] = useState(false);
+  const [compareReport, setCompareReport] = useState<typeof report | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -58,6 +59,42 @@ export function ReportsPage() {
     }
   };
 
+  const compareWith = async (reportId: string) => {
+    try {
+      setStatus("Loading report for comparison...");
+      const data = await getReport(reportId);
+      setCompareReport(data);
+      setStatus("Comparison loaded.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not compare reports");
+    }
+  };
+
+  const downloadPdf = async (reportId: string) => {
+    try {
+      setStatus("Generating PDF export...");
+      const blob = await exportReportPdf(reportId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `careerpilot-${reportId.slice(0, 8)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatus("PDF exported.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "PDF export failed");
+    }
+  };
+
+  const compareMetrics =
+    report && compareReport
+      ? {
+          scoreDelta: (report.readiness_score || 0) - (compareReport.readiness_score || 0),
+          gapsNow: getAgent(report, "SkillGapAgent")?.gaps || [],
+          gapsBefore: getAgent(compareReport, "SkillGapAgent")?.gaps || [],
+        }
+      : null;
+
   if (!candidateId) {
     return (
       <EmptyState
@@ -85,6 +122,7 @@ export function ReportsPage() {
             <span>Target role</span>
             <span>Created</span>
             <span />
+            <span />
           </div>
           {reports.length === 0 && <Text muted>No reports saved for this candidate yet.</Text>}
           {reports.map((item) => (
@@ -95,10 +133,55 @@ export function ReportsPage() {
               <Button variant="secondary" size="sm" onClick={() => void openReport(item.report_id)}>
                 Open
               </Button>
+              <Button variant="secondary" size="sm" onClick={() => void compareWith(item.report_id)}>
+                Compare
+              </Button>
             </div>
           ))}
         </div>
       </Panel>
+
+      {report?.report_id && (
+        <Panel delay={1}>
+          <div className={styles.head}>
+            <div>
+              <span className={styles.kicker}>Export</span>
+              <h2>Share report</h2>
+            </div>
+          </div>
+          <Button variant="primary" onClick={() => void downloadPdf(report.report_id!)}>
+            Download PDF report
+          </Button>
+        </Panel>
+      )}
+
+      {compareMetrics && (
+        <Panel delay={1}>
+          <div className={styles.head}>
+            <div>
+              <span className={styles.kicker}>Re-analysis comparison</span>
+              <h2>Current vs selected report</h2>
+            </div>
+            <Chip>{compareMetrics.scoreDelta >= 0 ? "Improved" : "Needs work"}</Chip>
+          </div>
+          <Text>
+            Readiness delta: {compareMetrics.scoreDelta >= 0 ? "+" : ""}
+            {compareMetrics.scoreDelta}
+          </Text>
+          <Text muted tiny>
+            Closed gaps:{" "}
+            {compareMetrics.gapsBefore
+              .filter((gap) => !compareMetrics.gapsNow.includes(gap))
+              .join(", ") || "None"}
+          </Text>
+          <Text muted tiny>
+            New gaps:{" "}
+            {compareMetrics.gapsNow
+              .filter((gap) => !compareMetrics.gapsBefore.includes(gap))
+              .join(", ") || "None"}
+          </Text>
+        </Panel>
+      )}
 
       {report?.matched_jobs && report.matched_jobs.length > 0 && (
         <Panel delay={1}>

@@ -13,6 +13,7 @@ export type AgentOutput = {
   gaps: string[];
   recommendations: string[];
   evidence: string[];
+  interview_tags?: Record<string, string[]>;
 };
 
 export type CandidateProfile = {
@@ -22,6 +23,8 @@ export type CandidateProfile = {
   education: string[];
   projects: string[];
   experience: string[];
+  github_url?: string;
+  linkedin_url?: string;
 };
 
 export type MatchedJob = {
@@ -39,6 +42,8 @@ export type CareerReadinessReport = {
   report_id?: string | null;
   candidate_id: string;
   target_role: string;
+  seniority_level?: string;
+  stack_emphasis?: string[];
   profile: CandidateProfile;
   agent_outputs: AgentOutput[];
   seven_day_plan: string[];
@@ -72,6 +77,7 @@ export type AnalysisJobStatus = {
   job_id: string;
   candidate_id: string;
   target_role: string;
+  seniority_level?: string;
   status: string;
   stage: string;
   progress: number;

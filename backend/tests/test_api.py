@@ -56,7 +56,11 @@ Python, FastAPI, SQL, Git, React, testing
 
     analyze_response = client.post(
         "/analyze",
-        json={"candidate_id": candidate_id, "target_role": "Backend Developer"},
+        json={
+            "candidate_id": candidate_id,
+            "target_role": "Backend Developer",
+            "seniority_level": "Junior",
+        },
     )
     assert analyze_response.status_code == 200
     job_id = analyze_response.json()["job_id"]
@@ -73,18 +77,25 @@ Python, FastAPI, SQL, Git, React, testing
     assert report_response.status_code == 200
     payload = report_response.json()
     assert payload["target_role"] == "Backend Developer"
+    assert payload.get("seniority_level") == "Junior"
     assert len(payload["agent_outputs"]) == 6
     assert len(payload["seven_day_plan"]) == 7
     assert payload["matched_jobs"], "expected curated real jobs in stub mode"
     assert payload["job_source"] in {"curated", "live", "live+curated"}
     assert payload["readiness_score"] is not None
     assert all(agent.get("evidence") for agent in payload["agent_outputs"])
+    coach = next(a for a in payload["agent_outputs"] if a["name"] == "InterviewCoachAgent")
+    assert coach.get("interview_tags"), "Interview coach should return categorized tags"
     assert "memory_note" in payload["explainability"]
 
     # Re-analyze to exercise memory injection
     analyze_again = client.post(
         "/analyze",
-        json={"candidate_id": candidate_id, "target_role": "Backend Developer"},
+        json={
+            "candidate_id": candidate_id,
+            "target_role": "Backend Developer",
+            "seniority_level": "Junior",
+        },
     )
     assert analyze_again.status_code == 200
     job2 = client.get(f"/jobs/{analyze_again.json()['job_id']}").json()

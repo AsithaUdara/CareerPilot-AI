@@ -5,6 +5,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
+from app.constants import normalize_role_key
 from app.models import JobListingModel, KnowledgeDocModel, SkillRequirementModel
 
 SEED_PATH = Path(__file__).resolve().parent.parent / "data" / "knowledge_seed.json"
@@ -73,7 +74,7 @@ def seed_knowledge_base(session: Session, *, force: bool = False) -> dict[str, i
 
 
 def query_jobs_for_role(session: Session, target_role: str) -> list[dict]:
-    role_key = target_role.lower()
+    role_key = normalize_role_key(target_role)
     rows = (
         session.query(JobListingModel)
         .filter(JobListingModel.role_key == role_key)
@@ -105,7 +106,7 @@ def query_jobs_for_role(session: Session, target_role: str) -> list[dict]:
 
 
 def query_required_skills(session: Session, target_role: str) -> list[dict]:
-    role_key = target_role.lower()
+    role_key = normalize_role_key(target_role)
     rows = (
         session.query(SkillRequirementModel)
         .filter(SkillRequirementModel.role_key == role_key)
@@ -127,7 +128,7 @@ def query_knowledge_docs(session: Session, target_role: str) -> list[str]:
 
 
 def query_knowledge_docs_detailed(session: Session, target_role: str) -> list[dict]:
-    role_key = target_role.lower()
+    role_key = normalize_role_key(target_role)
     rows = (
         session.query(KnowledgeDocModel)
         .filter(KnowledgeDocModel.role_key == role_key)

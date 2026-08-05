@@ -20,6 +20,8 @@ class CandidateProfileModel(Base):
     education_csv: Mapped[str] = mapped_column(Text, default="")
     projects_csv: Mapped[str] = mapped_column(Text, default="")
     experience_csv: Mapped[str] = mapped_column(Text, default="")
+    github_url: Mapped[str] = mapped_column(String(512), default="")
+    linkedin_url: Mapped[str] = mapped_column(String(512), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
 
@@ -39,6 +41,7 @@ class AnalysisJobModel(Base):
     job_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     candidate_id: Mapped[str] = mapped_column(String(64), index=True)
     target_role: Mapped[str] = mapped_column(String(128))
+    seniority_level: Mapped[str] = mapped_column(String(32), default="junior")
     status: Mapped[str] = mapped_column(String(32), default="queued")
     stage: Mapped[str] = mapped_column(String(64), default="queued")
     progress: Mapped[int] = mapped_column(Integer, default=0)

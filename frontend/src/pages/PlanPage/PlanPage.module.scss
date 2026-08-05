@@ -12,6 +12,24 @@
   margin-bottom: 4px;
 }
 
+.tagStack {
+  display: grid;
+  gap: 14px;
+}
+
+.tagGroup {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.tagLabel {
+  @include kicker;
+  margin: 0 0 8px;
+  color: #1559c5;
+}
+
 .block {
   display: grid;
   gap: 8px;

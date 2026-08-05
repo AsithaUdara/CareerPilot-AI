@@ -25,8 +25,8 @@ const TITLES: Record<PageId, { title: string; subtitle: string }> = {
     subtitle: "Close the highest-impact gaps for your target role."
   },
   plan: {
-    title: "Interview Prep & 7-Day Plan",
-    subtitle: "A practical weekly plan that tells you exactly what to do next."
+    title: "Interview Prep & Hiring Sprint",
+    subtitle: "7-day IT hiring sprint with categorized interview drills."
   },
   reports: {
     title: "Saved Reports",

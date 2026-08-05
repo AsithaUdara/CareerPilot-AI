@@ -15,6 +15,8 @@ def save_profile(session: Session, filename: str, profile: CandidateProfile) -> 
         education_csv=lists["education"],
         projects_csv=lists["projects"],
         experience_csv=lists["experience"],
+        github_url=profile.github_url or "",
+        linkedin_url=profile.linkedin_url or "",
     )
     session.merge(model)
 
@@ -30,4 +32,6 @@ def get_profile(session: Session, candidate_id: str) -> CandidateProfile | None:
         education=load_profile_list(model.education_csv),
         projects=load_profile_list(model.projects_csv),
         experience=load_profile_list(model.experience_csv),
+        github_url=getattr(model, "github_url", "") or "",
+        linkedin_url=getattr(model, "linkedin_url", "") or "",
     )

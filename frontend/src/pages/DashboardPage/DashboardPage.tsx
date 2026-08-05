@@ -65,7 +65,10 @@ export function DashboardPage() {
             <div className={styles.heroCopy}>
               <span className={styles.kicker}>Career readiness</span>
               <h2>
-                {report.target_role} <em>fit analysis</em>
+                {report.target_role}{" "}
+                <em>
+                  {report.seniority_level || "Junior"} fit
+                </em>
               </h2>
               <p className={styles.lead}>{match?.strengths?.[0] || "Match signal pending"}</p>
               <div className={styles.barTrack}>
@@ -97,7 +100,7 @@ export function DashboardPage() {
               Review Gaps
             </Button>
             <Button variant="primary" onClick={() => setPage("plan")}>
-              Open 7-Day Plan
+              Open Hiring Sprint
             </Button>
           </div>
         </Panel>

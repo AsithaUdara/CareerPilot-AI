@@ -10,7 +10,7 @@ const NAV_ITEMS: NavItemConfig[] = [
   { id: "upload", label: "Upload Resume", icon: "⇪" },
   { id: "readiness", label: "Readiness", icon: "◎" },
   { id: "gaps", label: "Skill Gaps", icon: "☰" },
-  { id: "plan", label: "7-Day Plan", icon: "◷" },
+  { id: "plan", label: "Hiring Sprint", icon: "◷" },
   { id: "reports", label: "Reports", icon: "▤" }
 ];
 
@@ -52,7 +52,7 @@ export function Sidebar({ page, hasReport, onNavigate }: SidebarProps) {
         <p className={styles.footerTitle}>Next action</p>
         <Text muted>
           {hasReport
-            ? "Review skill gaps, then execute Day 1 of your plan."
+            ? "Review skill gaps, then execute Day 1 of your hiring sprint."
             : "Upload a resume to generate your readiness report."}
         </Text>
         <Button

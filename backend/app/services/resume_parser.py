@@ -125,7 +125,14 @@ def enrich_profile_with_llm(raw_text: str) -> ExtractedProfile:
         return stub()
 
 
-def parse_resume(candidate_id: str, filename: str, raw_text: str) -> CandidateProfile:
+def parse_resume(
+    candidate_id: str,
+    filename: str,
+    raw_text: str,
+    *,
+    github_url: str = "",
+    linkedin_url: str = "",
+) -> CandidateProfile:
     extracted = enrich_profile_with_llm(raw_text)
     summary = extracted.summary.strip() or (raw_text.strip()[:300] or "No resume text extracted yet.")
     return CandidateProfile(
@@ -135,6 +142,8 @@ def parse_resume(candidate_id: str, filename: str, raw_text: str) -> CandidatePr
         education=extracted.education,
         projects=extracted.projects,
         experience=extracted.experience,
+        github_url=github_url.strip(),
+        linkedin_url=linkedin_url.strip(),
     )
 
 

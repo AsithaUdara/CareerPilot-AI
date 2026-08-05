@@ -33,6 +33,8 @@ def _merge_outputs(
 class GraphState(TypedDict, total=False):
     profile: CandidateProfile
     target_role: str
+    seniority_level: str
+    stack_emphasis: list[str]
     prior_memory: str
     agent_outputs: Annotated[list[AgentOutput], _merge_outputs]
     seven_day_plan: list[str]
@@ -84,6 +86,8 @@ class AgentOrchestrator:
         session: Session,
         profile: CandidateProfile,
         target_role: str,
+        seniority_level: str = "Junior",
+        stack_emphasis: list[str] | None = None,
         on_progress: ProgressCallback | None = None,
     ) -> CareerReadinessReport:
         settings = get_settings()
@@ -100,6 +104,8 @@ class AgentOrchestrator:
         initial: GraphState = {
             "profile": profile,
             "target_role": target_role,
+            "seniority_level": seniority_level,
+            "stack_emphasis": stack_emphasis or [],
             "prior_memory": prior_memory,
             "agent_outputs": [],
             "seven_day_plan": [],
@@ -113,6 +119,8 @@ class AgentOrchestrator:
             report_id=final_state["report_id"],
             candidate_id=profile.candidate_id,
             target_role=target_role,
+            seniority_level=seniority_level,
+            stack_emphasis=stack_emphasis or [],
             profile=profile,
             agent_outputs=final_state.get("agent_outputs") or [],
             seven_day_plan=final_state.get("seven_day_plan") or [],
@@ -141,6 +149,8 @@ class AgentOrchestrator:
             state["profile"],
             state["target_role"],
             prior_memory=state.get("prior_memory") or "",
+            seniority_level=state.get("seniority_level") or "Junior",
+            stack_emphasis=state.get("stack_emphasis") or [],
         )
         return {"agent_outputs": [output]}
 
@@ -176,6 +186,8 @@ class AgentOrchestrator:
             state["target_role"],
             jobs,
             rag_hits,
+            seniority_level=state.get("seniority_level") or "Junior",
+            stack_emphasis=state.get("stack_emphasis") or [],
         )
         return {"agent_outputs": [output]}
 
@@ -198,6 +210,8 @@ class AgentOrchestrator:
             required,
             self._jobs,
             rag_hits,
+            seniority_level=state.get("seniority_level") or "Junior",
+            stack_emphasis=state.get("stack_emphasis") or [],
         )
         return {"agent_outputs": [output]}
 
@@ -213,7 +227,13 @@ class AgentOrchestrator:
             k=5,
         )
         self._rag_hits = list(dict.fromkeys(self._rag_hits + learning_hits))
-        output = agent_fns.learning_planner_agent(gaps, state["target_role"], learning_hits)
+        output = agent_fns.learning_planner_agent(
+            gaps,
+            state["target_role"],
+            learning_hits,
+            seniority_level=state.get("seniority_level") or "Junior",
+            stack_emphasis=state.get("stack_emphasis") or [],
+        )
         return {"agent_outputs": [output]}
 
     def _node_resume_opt(self, state: GraphState) -> GraphState:
@@ -226,6 +246,8 @@ class AgentOrchestrator:
             state["profile"],
             gaps,
             state["target_role"],
+            seniority_level=state.get("seniority_level") or "Junior",
+            stack_emphasis=state.get("stack_emphasis") or [],
         )
         return {"agent_outputs": [output]}
 
@@ -241,7 +263,13 @@ class AgentOrchestrator:
             k=4,
         )
         self._rag_hits = list(dict.fromkeys(self._rag_hits + interview_hits))
-        output = agent_fns.interview_coach_agent(state["target_role"], gaps, interview_hits)
+        output = agent_fns.interview_coach_agent(
+            state["target_role"],
+            gaps,
+            interview_hits,
+            seniority_level=state.get("seniority_level") or "Junior",
+            stack_emphasis=state.get("stack_emphasis") or [],
+        )
         return {"agent_outputs": [output]}
 
     def _node_compose(self, state: GraphState) -> GraphState:
@@ -256,6 +284,8 @@ class AgentOrchestrator:
             self._jobs,
             self._rag_hits,
             state.get("prior_memory") or "",
+            seniority_level=state.get("seniority_level") or "Junior",
+            stack_emphasis=state.get("stack_emphasis") or [],
         )
         jobs = self._jobs
         required = self._required_skills
@@ -266,7 +296,18 @@ class AgentOrchestrator:
             "required_skills": ", ".join(item["skill"] for item in required[:10])
             or ", ".join(sorted({s for j in jobs for s in j.required_skills}))[:300],
             "job_source": self._job_source,
+            "stack_emphasis": ", ".join(state.get("stack_emphasis") or []),
         }
+        learning = next(
+            (a for a in (state.get("agent_outputs") or []) if a.name == "LearningPlannerAgent"),
+            None,
+        )
+        if learning and learning.recommendations:
+            project_hint = next(
+                (r for r in learning.recommendations if "portfolio project suggestion" in r.lower()),
+                learning.recommendations[0],
+            )
+            explainability["portfolio_project_suggestion"] = project_hint
         return {
             "seven_day_plan": composed.days,
             "readiness_score": composed.readiness_score,

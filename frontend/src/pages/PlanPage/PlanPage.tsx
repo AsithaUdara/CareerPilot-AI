@@ -1,6 +1,7 @@
 import { Panel } from "@/atoms/Panel";
 import { Text } from "@/atoms/Text";
 import { getAgent } from "@/api/client";
+import { INTERVIEW_TAG_LABELS } from "@/constants/itRoles";
 import { EmptyState } from "@/molecules/EmptyState";
 import { InsightList } from "@/molecules/InsightList";
 import { useAppState } from "@/state/AppState";
@@ -10,14 +11,15 @@ export function PlanPage() {
   const { report, setPage } = useAppState();
   const interview = getAgent(report, "InterviewCoachAgent");
   const resumeOpt = getAgent(report, "ResumeOptimizationAgent");
+  const interviewTags = interview?.interview_tags || {};
 
   if (!report) {
     return (
       <EmptyState
         icon="◷"
-        title="No action plan generated"
-        description="Complete analysis to unlock your personalized 7-day plan."
-        actionLabel="Generate Plan"
+        title="No hiring sprint generated"
+        description="Complete analysis to unlock your personalized 7-Day Hiring Sprint."
+        actionLabel="Generate Sprint"
         onAction={() => setPage("upload")}
       />
     );
@@ -27,10 +29,19 @@ export function PlanPage() {
     <div className={styles.grid}>
       <Panel span={7}>
         <span className={styles.kicker}>Orchestrator output</span>
-        <h2>7-day action plan</h2>
+        <h2>7-Day Hiring Sprint</h2>
         <Text muted tiny>
-          Synthesized from agent outputs, matched jobs, and RAG evidence — exactly what to do next.
+          IT-focused weekly sprint — resume, GitHub artifact, interview drills, and targeted
+          applications. Seniority: {report.seniority_level || "Junior"} · Role: {report.target_role}
         </Text>
+        {report.explainability?.stack_emphasis && (
+          <Text muted tiny>Stack focus: {report.explainability.stack_emphasis}</Text>
+        )}
+        {report.explainability?.portfolio_project_suggestion && (
+          <Text muted tiny>
+            {report.explainability.portfolio_project_suggestion}
+          </Text>
+        )}
         <ol className={styles.planList}>
           {report.seven_day_plan.map((step, index) => (
             <li key={`${index}-${step}`}>
@@ -56,7 +67,20 @@ export function PlanPage() {
             <h2>Interview prep</h2>
           </div>
         </div>
-        <InsightList items={interview?.recommendations || []} />
+        {Object.keys(interviewTags).length > 0 ? (
+          <div className={styles.tagStack}>
+            {Object.entries(interviewTags).map(([key, items]) =>
+              items.length > 0 ? (
+                <div className={styles.tagGroup} key={key}>
+                  <p className={styles.tagLabel}>{INTERVIEW_TAG_LABELS[key] || key}</p>
+                  <InsightList compact items={items} />
+                </div>
+              ) : null
+            )}
+          </div>
+        ) : (
+          <InsightList items={interview?.recommendations || []} />
+        )}
         <div className={styles.block}>
           <p className={styles.blockLabel}>Evidence</p>
           <InsightList compact items={interview?.evidence || []} />

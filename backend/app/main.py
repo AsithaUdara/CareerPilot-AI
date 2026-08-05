@@ -3,12 +3,13 @@ from uuid import uuid4
 from contextlib import asynccontextmanager
 import os
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app import models  # noqa: F401
 from app.config import get_settings
+from app.constants import IT_TARGET_ROLES, SENIORITY_LEVELS
 from app.db import DATABASE_URL, engine, get_session
 from app.repositories.job_repository import get_job
 from app.repositories.knowledge_repository import seed_knowledge_base
@@ -64,6 +65,16 @@ app.add_middleware(
 )
 
 
+@app.get("/meta/it-roles")
+def list_it_roles() -> list[str]:
+    return list(IT_TARGET_ROLES)
+
+
+@app.get("/meta/seniority-levels")
+def list_seniority_levels() -> list[str]:
+    return list(SENIORITY_LEVELS)
+
+
 @app.get("/health")
 def health() -> dict:
     settings = get_settings()
@@ -85,14 +96,24 @@ def health() -> dict:
 
 
 @app.post("/resume/upload", response_model=ResumeUploadResponse)
-async def upload_resume(file: UploadFile = File(...)) -> ResumeUploadResponse:
+async def upload_resume(
+    file: UploadFile = File(...),
+    github_url: str = Form(""),
+    linkedin_url: str = Form(""),
+) -> ResumeUploadResponse:
     candidate_id = str(uuid4())
     target = UPLOAD_DIR / f"{candidate_id}_{file.filename}"
 
     content = await file.read()
     target.write_bytes(content)
     raw_text = read_resume_text(target)
-    profile = parse_resume(candidate_id, file.filename or "resume", raw_text)
+    profile = parse_resume(
+        candidate_id,
+        file.filename or "resume",
+        raw_text,
+        github_url=github_url,
+        linkedin_url=linkedin_url,
+    )
     with get_session() as session:
         save_profile(session, file.filename or "resume", profile)
 
@@ -127,7 +148,12 @@ def analyze(payload: AnalyzeRequest) -> AnalyzeJobAccepted:
         if not profile:
             raise HTTPException(status_code=404, detail="Candidate profile not found.")
 
-    job_id = enqueue_analysis_job(payload.candidate_id, payload.target_role)
+    job_id = enqueue_analysis_job(
+        payload.candidate_id,
+        payload.target_role,
+        payload.seniority_level,
+        payload.stack_emphasis,
+    )
     return AnalyzeJobAccepted(
         job_id=job_id,
         status="queued",
@@ -145,6 +171,7 @@ def fetch_job(job_id: str) -> AnalysisJobStatus:
             job_id=job.job_id,
             candidate_id=job.candidate_id,
             target_role=job.target_role,
+            seniority_level=(getattr(job, "seniority_level", "junior") or "junior").title(),
             status=job.status,
             stage=job.stage,
             progress=job.progress,
@@ -161,6 +188,24 @@ def fetch_report(report_id: str) -> CareerReadinessReport:
     if not report:
         raise HTTPException(status_code=404, detail="Report not found.")
     return report
+
+
+@app.get("/reports/{report_id}/export.pdf")
+def export_report_pdf(report_id: str):
+    with get_session() as session:
+        report = get_report(session, report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found.")
+    from app.services.report_export import render_report_pdf
+
+    pdf_bytes = render_report_pdf(report)
+    from fastapi.responses import Response
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="careerpilot-{report_id[:8]}.pdf"'},
+    )
 
 
 @app.get("/candidates/{candidate_id}/reports", response_model=list[ReportSummary])

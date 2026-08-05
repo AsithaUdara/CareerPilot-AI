@@ -25,9 +25,14 @@ async function parseJson<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export async function uploadResume(file: File): Promise<UploadResponse> {
+export async function uploadResume(
+  file: File,
+  options?: { githubUrl?: string; linkedinUrl?: string }
+): Promise<UploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
+  if (options?.githubUrl) formData.append("github_url", options.githubUrl);
+  if (options?.linkedinUrl) formData.append("linkedin_url", options.linkedinUrl);
   const res = await fetch(`${API_BASE}/resume/upload`, {
     method: "POST",
     body: formData
@@ -42,12 +47,19 @@ export async function getProfile(candidateId: string): Promise<CandidateProfile>
 
 export async function startAnalysis(
   candidateId: string,
-  targetRole: string
+  targetRole: string,
+  seniorityLevel: string,
+  stackEmphasis: string[]
 ): Promise<AnalyzeJobAccepted> {
   const res = await fetch(`${API_BASE}/analyze`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ candidate_id: candidateId, target_role: targetRole })
+    body: JSON.stringify({
+      candidate_id: candidateId,
+      target_role: targetRole,
+      seniority_level: seniorityLevel,
+      stack_emphasis: stackEmphasis
+    })
   });
   return parseJson<AnalyzeJobAccepted>(res);
 }
@@ -77,9 +89,11 @@ export async function waitForAnalysisJob(
 export async function analyzeCandidate(
   candidateId: string,
   targetRole: string,
+  seniorityLevel: string,
+  stackEmphasis: string[],
   onProgress?: (job: AnalysisJobStatus) => void
 ): Promise<CareerReadinessReport> {
-  const accepted = await startAnalysis(candidateId, targetRole);
+  const accepted = await startAnalysis(candidateId, targetRole, seniorityLevel, stackEmphasis);
   const job = await waitForAnalysisJob(accepted.job_id, onProgress);
   if (job.status === "failed") {
     throw new Error(job.error || "Analysis pipeline failed");
@@ -98,6 +112,14 @@ export async function listReports(candidateId: string): Promise<ReportSummary[]>
 export async function getReport(reportId: string): Promise<CareerReadinessReport> {
   const res = await fetch(`${API_BASE}/reports/${reportId}`);
   return parseJson<CareerReadinessReport>(res);
+}
+
+export async function exportReportPdf(reportId: string): Promise<Blob> {
+  const res = await fetch(`${API_BASE}/reports/${reportId}/export.pdf`);
+  if (!res.ok) {
+    throw new Error(`Export failed (${res.status})`);
+  }
+  return res.blob();
 }
 
 export function getAgent(report: CareerReadinessReport | null, name: string) {
