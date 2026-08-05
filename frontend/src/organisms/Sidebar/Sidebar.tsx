@@ -11,7 +11,10 @@ const NAV_ITEMS: NavItemConfig[] = [
   { id: "readiness", label: "Readiness", icon: "◎" },
   { id: "gaps", label: "Skill Gaps", icon: "☰" },
   { id: "plan", label: "Hiring Sprint", icon: "◷" },
-  { id: "reports", label: "Reports", icon: "▤" }
+  { id: "reports", label: "Reports", icon: "▤" },
+  { id: "mentor", label: "AI Mentor", icon: "✦" },
+  { id: "analytics", label: "Analytics", icon: "↗" },
+  { id: "insights", label: "Workspace", icon: "▣" }
 ];
 
 type SidebarProps = {

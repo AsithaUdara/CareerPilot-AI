@@ -1,0 +1,120 @@
+@use "@/styles/tokens" as *;
+
+.stack {
+  display: grid;
+  gap: 16px;
+}
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.kicker {
+  @include kicker;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.timeline {
+  display: grid;
+  gap: 14px;
+}
+
+.point {
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+}
+
+.pointMeta {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+
+  strong {
+    font-family: $font-display;
+    font-size: 1.2rem;
+  }
+}
+
+.date {
+  color: $muted;
+  font-size: 0.8rem;
+  margin-left: auto;
+}
+
+.barTrack {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(27, 36, 51, 0.08);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, $accent, $violet, $accent-2);
+}
+
+.pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pill {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #b45309;
+  background: rgba(217, 119, 6, 0.12);
+}
+
+.block {
+  margin-top: 18px;
+}
+
+.blockLabel {
+  @include kicker;
+  color: $muted;
+  margin: 0 0 10px;
+}
+
+.roleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(27, 36, 51, 0.06);
+}

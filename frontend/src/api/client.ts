@@ -2,9 +2,13 @@ import type {
   AnalysisJobStatus,
   AnalyzeJobAccepted,
   CandidateProfile,
+  CareerAnalytics,
   CareerReadinessReport,
+  MentorChatMessage,
+  MentorChatResponse,
   ReportSummary,
-  UploadResponse
+  UploadResponse,
+  WorkspaceInsights
 } from "@/types";
 
 export const API_BASE =
@@ -120,6 +124,35 @@ export async function exportReportPdf(reportId: string): Promise<Blob> {
     throw new Error(`Export failed (${res.status})`);
   }
   return res.blob();
+}
+
+export async function chatWithMentor(
+  candidateId: string,
+  message: string,
+  history: MentorChatMessage[],
+  reportId?: string | null
+): Promise<MentorChatResponse> {
+  const res = await fetch(`${API_BASE}/mentor/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      candidate_id: candidateId,
+      message,
+      report_id: reportId || undefined,
+      history
+    })
+  });
+  return parseJson<MentorChatResponse>(res);
+}
+
+export async function getCandidateAnalytics(candidateId: string): Promise<CareerAnalytics> {
+  const res = await fetch(`${API_BASE}/candidates/${candidateId}/analytics`);
+  return parseJson<CareerAnalytics>(res);
+}
+
+export async function getWorkspaceInsights(): Promise<WorkspaceInsights> {
+  const res = await fetch(`${API_BASE}/workspace/insights`);
+  return parseJson<WorkspaceInsights>(res);
 }
 
 export function getAgent(report: CareerReadinessReport | null, name: string) {

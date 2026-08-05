@@ -5,7 +5,10 @@ export type PageId =
   | "readiness"
   | "gaps"
   | "plan"
-  | "reports";
+  | "reports"
+  | "mentor"
+  | "analytics"
+  | "insights";
 
 export type AgentOutput = {
   name: string;
@@ -84,6 +87,48 @@ export type AnalysisJobStatus = {
   message: string;
   report_id?: string | null;
   error?: string | null;
+};
+
+export type MentorChatMessage = {
+  role: "user" | "assistant" | string;
+  content: string;
+};
+
+export type MentorChatResponse = {
+  reply: string;
+  suggestions: string[];
+};
+
+export type ReadinessPoint = {
+  report_id: string;
+  target_role: string;
+  readiness_score: number;
+  created_at?: string | null;
+  top_gaps: string[];
+};
+
+export type RoleCount = {
+  role: string;
+  count: number;
+};
+
+export type CareerAnalytics = {
+  candidate_id: string;
+  report_count: number;
+  timeline: ReadinessPoint[];
+  recurring_gaps: string[];
+  roles_analyzed: RoleCount[];
+  score_delta?: number | null;
+  closed_gaps: string[];
+  new_gaps: string[];
+};
+
+export type WorkspaceInsights = {
+  candidate_count: number;
+  report_count: number;
+  average_readiness?: number | null;
+  role_distribution: RoleCount[];
+  recent_reports: ReadinessPoint[];
 };
 
 export type KpiTone = "blue" | "teal" | "amber" | "rose";

@@ -94,6 +94,12 @@ export function ReportsPage() {
           gapsBefore: getAgent(compareReport, "SkillGapAgent")?.gaps || [],
         }
       : null;
+  const closedGaps = compareMetrics
+    ? compareMetrics.gapsBefore.filter((gap) => !compareMetrics.gapsNow.includes(gap))
+    : [];
+  const newGaps = compareMetrics
+    ? compareMetrics.gapsNow.filter((gap) => !compareMetrics.gapsBefore.includes(gap))
+    : [];
 
   if (!candidateId) {
     return (
@@ -116,6 +122,16 @@ export function ReportsPage() {
           </div>
           <Chip>{loading ? "Refreshing..." : `${reports.length} reports`}</Chip>
         </div>
+        {report?.report_id && (
+          <div className={styles.quickActions}>
+            <Button variant="primary" onClick={() => void downloadPdf(report.report_id!)}>
+              Download PDF report
+            </Button>
+            <Text muted tiny>
+              Tip: click <strong>Compare</strong> on any row to see progress vs your active report.
+            </Text>
+          </div>
+        )}
         <div className={styles.table}>
           <div className={`${styles.row} ${styles.headRow}`}>
             <span>Report</span>
@@ -141,20 +157,6 @@ export function ReportsPage() {
         </div>
       </Panel>
 
-      {report?.report_id && (
-        <Panel delay={1}>
-          <div className={styles.head}>
-            <div>
-              <span className={styles.kicker}>Export</span>
-              <h2>Share report</h2>
-            </div>
-          </div>
-          <Button variant="primary" onClick={() => void downloadPdf(report.report_id!)}>
-            Download PDF report
-          </Button>
-        </Panel>
-      )}
-
       {compareMetrics && (
         <Panel delay={1}>
           <div className={styles.head}>
@@ -164,22 +166,43 @@ export function ReportsPage() {
             </div>
             <Chip>{compareMetrics.scoreDelta >= 0 ? "Improved" : "Needs work"}</Chip>
           </div>
-          <Text>
-            Readiness delta: {compareMetrics.scoreDelta >= 0 ? "+" : ""}
-            {compareMetrics.scoreDelta}
-          </Text>
-          <Text muted tiny>
-            Closed gaps:{" "}
-            {compareMetrics.gapsBefore
-              .filter((gap) => !compareMetrics.gapsNow.includes(gap))
-              .join(", ") || "None"}
-          </Text>
-          <Text muted tiny>
-            New gaps:{" "}
-            {compareMetrics.gapsNow
-              .filter((gap) => !compareMetrics.gapsBefore.includes(gap))
-              .join(", ") || "None"}
-          </Text>
+          <div className={styles.compareGrid}>
+            <div className={`${styles.metricCard} ${compareMetrics.scoreDelta >= 0 ? styles.good : styles.warn}`}>
+              <p className={styles.metricLabel}>Readiness delta</p>
+              <p className={styles.metricValue}>
+                {compareMetrics.scoreDelta >= 0 ? "+" : ""}
+                {compareMetrics.scoreDelta}
+              </p>
+            </div>
+            <div className={styles.metricCard}>
+              <p className={styles.metricLabel}>Closed gaps</p>
+              <div className={styles.pillRow}>
+                {closedGaps.length > 0 ? (
+                  closedGaps.map((gap) => (
+                    <span key={gap} className={`${styles.gapPill} ${styles.closed}`}>
+                      {gap}
+                    </span>
+                  ))
+                ) : (
+                  <span className={styles.emptyPill}>None</span>
+                )}
+              </div>
+            </div>
+            <div className={styles.metricCard}>
+              <p className={styles.metricLabel}>New gaps</p>
+              <div className={styles.pillRow}>
+                {newGaps.length > 0 ? (
+                  newGaps.map((gap) => (
+                    <span key={gap} className={`${styles.gapPill} ${styles.new}`}>
+                      {gap}
+                    </span>
+                  ))
+                ) : (
+                  <span className={styles.emptyPill}>None</span>
+                )}
+              </div>
+            </div>
+          </div>
         </Panel>
       )}
 

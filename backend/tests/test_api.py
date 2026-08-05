@@ -88,6 +88,26 @@ Python, FastAPI, SQL, Git, React, testing
     assert coach.get("interview_tags"), "Interview coach should return categorized tags"
     assert "memory_note" in payload["explainability"]
 
+    mentor = client.post(
+        "/mentor/chat",
+        json={
+            "candidate_id": candidate_id,
+            "message": "What should I do this week?",
+            "report_id": job["report_id"],
+            "history": [],
+        },
+    )
+    assert mentor.status_code == 200
+    assert mentor.json()["reply"]
+
+    analytics = client.get(f"/candidates/{candidate_id}/analytics")
+    assert analytics.status_code == 200
+    assert analytics.json()["report_count"] >= 1
+
+    insights = client.get("/workspace/insights")
+    assert insights.status_code == 200
+    assert insights.json()["report_count"] >= 1
+
     # Re-analyze to exercise memory injection
     analyze_again = client.post(
         "/analyze",

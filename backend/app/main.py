@@ -19,11 +19,17 @@ from app.schemas import (
     AnalysisJobStatus,
     AnalyzeJobAccepted,
     AnalyzeRequest,
+    CareerAnalyticsResponse,
     CareerReadinessReport,
+    MentorChatRequest,
+    MentorChatResponse,
     ReportSummary,
     ResumeUploadResponse,
+    WorkspaceInsightsResponse,
 )
+from app.services.analytics import candidate_career_analytics, workspace_insights
 from app.services.dispatcher import enqueue_analysis_job
+from app.services.mentor import mentor_reply
 from app.services.resume_parser import parse_resume, read_resume_text
 
 UPLOAD_DIR = Path("uploads")
@@ -213,3 +219,45 @@ def fetch_candidate_reports(candidate_id: str) -> list[ReportSummary]:
     with get_session() as session:
         rows = list_reports_for_candidate(session, candidate_id)
     return [ReportSummary(**row) for row in rows]
+
+
+@app.post("/mentor/chat", response_model=MentorChatResponse)
+def mentor_chat(payload: MentorChatRequest) -> MentorChatResponse:
+    settings = get_settings()
+    try:
+        settings.require_gemini()
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    with get_session() as session:
+        profile = get_profile(session, payload.candidate_id)
+        if not profile:
+            raise HTTPException(status_code=404, detail="Candidate profile not found.")
+        report = None
+        if payload.report_id:
+            report = get_report(session, payload.report_id)
+        else:
+            summaries = list_reports_for_candidate(session, payload.candidate_id)
+            if summaries:
+                report = get_report(session, summaries[0]["report_id"])
+
+    return mentor_reply(
+        message=payload.message.strip(),
+        history=payload.history,
+        report=report,
+    )
+
+
+@app.get("/candidates/{candidate_id}/analytics", response_model=CareerAnalyticsResponse)
+def fetch_candidate_analytics(candidate_id: str) -> CareerAnalyticsResponse:
+    with get_session() as session:
+        profile = get_profile(session, candidate_id)
+        if not profile:
+            raise HTTPException(status_code=404, detail="Candidate profile not found.")
+        return candidate_career_analytics(session, candidate_id)
+
+
+@app.get("/workspace/insights", response_model=WorkspaceInsightsResponse)
+def fetch_workspace_insights() -> WorkspaceInsightsResponse:
+    with get_session() as session:
+        return workspace_insights(session)

@@ -157,3 +157,52 @@ class SevenDayPlanResult(BaseModel):
 
 class SkillExtractionResult(BaseModel):
     required_skills: List[str] = Field(default_factory=list)
+
+
+class MentorChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class MentorChatRequest(BaseModel):
+    candidate_id: str
+    message: str
+    report_id: Optional[str] = None
+    history: List[MentorChatMessage] = Field(default_factory=list)
+
+
+class MentorChatResponse(BaseModel):
+    reply: str
+    suggestions: List[str] = Field(default_factory=list)
+
+
+class ReadinessPoint(BaseModel):
+    report_id: str
+    target_role: str
+    readiness_score: int
+    created_at: Optional[str] = None
+    top_gaps: List[str] = Field(default_factory=list)
+
+
+class RoleCount(BaseModel):
+    role: str
+    count: int
+
+
+class CareerAnalyticsResponse(BaseModel):
+    candidate_id: str
+    report_count: int
+    timeline: List[ReadinessPoint] = Field(default_factory=list)
+    recurring_gaps: List[str] = Field(default_factory=list)
+    roles_analyzed: List[RoleCount] = Field(default_factory=list)
+    score_delta: Optional[int] = None
+    closed_gaps: List[str] = Field(default_factory=list)
+    new_gaps: List[str] = Field(default_factory=list)
+
+
+class WorkspaceInsightsResponse(BaseModel):
+    candidate_count: int
+    report_count: int
+    average_readiness: Optional[float] = None
+    role_distribution: List[RoleCount] = Field(default_factory=list)
+    recent_reports: List[ReadinessPoint] = Field(default_factory=list)

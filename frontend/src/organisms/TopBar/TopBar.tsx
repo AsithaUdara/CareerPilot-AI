@@ -31,6 +31,18 @@ const TITLES: Record<PageId, { title: string; subtitle: string }> = {
   reports: {
     title: "Saved Reports",
     subtitle: "Revisit previous analyses stored in your workspace."
+  },
+  mentor: {
+    title: "AI Career Mentor",
+    subtitle: "Conversational coaching grounded in your readiness report."
+  },
+  analytics: {
+    title: "Career Analytics",
+    subtitle: "Track readiness, closed gaps, and progress across analyses."
+  },
+  insights: {
+    title: "Workspace Insights",
+    subtitle: "Institution-style overview of candidates, roles, and readiness."
   }
 };
 

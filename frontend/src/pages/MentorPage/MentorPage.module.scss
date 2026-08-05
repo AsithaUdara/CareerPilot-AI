@@ -1,0 +1,116 @@
+@use "@/styles/tokens" as *;
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+
+.kicker {
+  @include kicker;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.chatPanel {
+  display: flex;
+  flex-direction: column;
+  min-height: 560px;
+}
+
+.thread {
+  margin-top: 16px;
+  flex: 1;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.bubble {
+  padding: 12px 14px;
+  border-radius: 14px;
+  max-width: 92%;
+
+  p {
+    margin: 4px 0 0;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+}
+
+.user {
+  justify-self: end;
+  background: linear-gradient(135deg, rgba(31, 122, 239, 0.16), rgba(124, 92, 255, 0.12));
+  border: 1px solid rgba(31, 122, 239, 0.2);
+}
+
+.bot {
+  justify-self: start;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.role {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $muted;
+}
+
+.typing {
+  color: $muted;
+  font-size: 0.85rem;
+  padding: 4px 8px;
+}
+
+.composer {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+}
+
+.input {
+  flex: 1;
+  border-radius: 14px;
+  border: 1px solid rgba(27, 36, 51, 0.1);
+  background: rgba(255, 255, 255, 0.72);
+  padding: 12px 14px;
+  font: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: rgba(31, 122, 239, 0.45);
+    box-shadow: 0 0 0 3px rgba(31, 122, 239, 0.12);
+  }
+}
+
+.suggestions {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.suggestion {
+  text-align: left;
+  border: 1px solid rgba(31, 122, 239, 0.16);
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  font: inherit;
+  transition: transform 180ms ease, border-color 180ms ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: rgba(31, 122, 239, 0.35);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}

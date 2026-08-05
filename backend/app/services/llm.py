@@ -93,6 +93,34 @@ def _extract_json_object(raw: str) -> dict[str, Any]:
     return data
 
 
+def invoke_text(
+    *,
+    system: str,
+    user: str,
+    stub_reply: str | None = None,
+) -> str:
+    """Invoke Gemini for a plain-text reply. Uses stub_reply in stub mode."""
+    settings = get_settings()
+    settings.require_gemini()
+
+    if settings.use_stub_llm:
+        return stub_reply or (
+            "Focus on your top skill gap this week, ship one GitHub artifact, "
+            "then practice two interview drills from your hiring sprint."
+        )
+
+    model = get_chat_model()
+    assert model is not None
+    prompt = f"{system}\n\nUser request:\n{user}"
+    response = model.invoke(prompt)
+    content = response.content if hasattr(response, "content") else str(response)
+    if isinstance(content, list):
+        content = "".join(
+            part.get("text", "") if isinstance(part, dict) else str(part) for part in content
+        )
+    return str(content).strip()
+
+
 def invoke_structured(
     *,
     system: str,

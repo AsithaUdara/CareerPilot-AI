@@ -7,6 +7,9 @@ import { ReadinessPage } from "@/pages/ReadinessPage";
 import { GapsPage } from "@/pages/GapsPage";
 import { PlanPage } from "@/pages/PlanPage";
 import { ReportsPage } from "@/pages/ReportsPage";
+import { MentorPage } from "@/pages/MentorPage";
+import { AnalyticsPage } from "@/pages/AnalyticsPage";
+import { InsightsPage } from "@/pages/InsightsPage";
 
 function Shell() {
   const { page } = useAppState();
@@ -23,6 +26,9 @@ function Shell() {
       {page === "gaps" && <GapsPage />}
       {page === "plan" && <PlanPage />}
       {page === "reports" && <ReportsPage />}
+      {page === "mentor" && <MentorPage />}
+      {page === "analytics" && <AnalyticsPage />}
+      {page === "insights" && <InsightsPage />}
     </AppShell>
   );
 }
