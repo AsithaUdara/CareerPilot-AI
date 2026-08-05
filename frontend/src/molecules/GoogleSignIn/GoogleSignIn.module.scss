@@ -1,0 +1,78 @@
+@use "@/styles/tokens" as *;
+
+.buttonHost {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.signedIn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.avatarFallback {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: linear-gradient(135deg, $accent, $violet);
+  color: #fff;
+}
+
+.meta {
+  display: grid;
+  gap: 1px;
+  max-width: 140px;
+}
+
+.name {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.email {
+  margin: 0;
+  font-size: 0.7rem;
+  color: $muted;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logout {
+  border: 1px solid rgba(27, 36, 51, 0.12);
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(31, 122, 239, 0.35);
+  }
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: $muted;
+}

@@ -1,6 +1,7 @@
+import { GoogleSignIn } from "@/molecules/GoogleSignIn";
 import { StatusPill } from "@/molecules/StatusPill";
-import { ProfileChip } from "@/molecules/ProfileChip";
 import type { PageId } from "@/types";
+import { useAppState } from "@/state/AppState";
 import styles from "./TopBar.module.scss";
 
 const TITLES: Record<PageId, { title: string; subtitle: string }> = {
@@ -14,7 +15,7 @@ const TITLES: Record<PageId, { title: string; subtitle: string }> = {
   },
   upload: {
     title: "Upload & Analyze",
-    subtitle: "Parse your resume and generate a multi-agent readiness report."
+    subtitle: "Verify your profile, then run the multi-agent pipeline."
   },
   readiness: {
     title: "Career Readiness",
@@ -49,10 +50,10 @@ const TITLES: Record<PageId, { title: string; subtitle: string }> = {
 type TopBarProps = {
   page: PageId;
   status: string;
-  candidateId: string;
 };
 
-export function TopBar({ page, status, candidateId }: TopBarProps) {
+export function TopBar({ page, status }: TopBarProps) {
+  const { clearWorkspace, busy, authUser, candidateId } = useAppState();
   const meta = TITLES[page];
   return (
     <header className={styles.topbar}>
@@ -62,10 +63,21 @@ export function TopBar({ page, status, candidateId }: TopBarProps) {
       </div>
       <div className={styles.right}>
         <StatusPill label={status} />
-        <ProfileChip
-          name="Candidate"
-          detail={candidateId ? candidateId.slice(0, 8) : "Not uploaded"}
-        />
+        {busy && <span className={styles.busyTag}>Agents running</span>}
+        <GoogleSignIn compact />
+        {!authUser && (
+          <span className={styles.guest}>
+            {candidateId ? `ID ${candidateId.slice(0, 8)}` : "Guest"}
+          </span>
+        )}
+        <button
+          type="button"
+          className={styles.reset}
+          onClick={clearWorkspace}
+          title="Clear local session and start fresh"
+        >
+          Start fresh
+        </button>
       </div>
     </header>
   );

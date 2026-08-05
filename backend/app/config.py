@@ -34,6 +34,12 @@ class Settings:
         # Explicit stub mode for tests only — never silent production fallback.
         self.use_stub_llm: bool = os.getenv("CAREERPILOT_USE_STUB_LLM", "0").strip() == "1"
 
+        self.google_oauth_client_id: str = (os.getenv("GOOGLE_OAUTH_CLIENT_ID") or "").strip()
+        self.jwt_secret: str = (os.getenv("JWT_SECRET") or "careerpilot-dev-secret-change-me").strip()
+        self.jwt_expire_hours: int = int(os.getenv("JWT_EXPIRE_HOURS", "168"))
+        # When true (tests / local without OAuth), candidate routes stay open.
+        self.auth_disabled: bool = os.getenv("AUTH_DISABLED", "0").strip() == "1"
+
     @property
     def gemini_configured(self) -> bool:
         return bool(self.google_api_key) or self.use_stub_llm
@@ -41,6 +47,10 @@ class Settings:
     @property
     def adzuna_configured(self) -> bool:
         return bool(self.adzuna_app_id and self.adzuna_app_key)
+
+    @property
+    def auth_required(self) -> bool:
+        return not self.auth_disabled
 
     def require_gemini(self) -> None:
         if not self.gemini_configured:

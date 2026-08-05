@@ -17,7 +17,8 @@ export function ReportsPage() {
     setProfile,
     setPage,
     setStatus,
-    report
+    report,
+    setUploadStep
   } = useAppState();
   const [loading, setLoading] = useState(false);
   const [compareReport, setCompareReport] = useState<typeof report | null>(null);
@@ -126,6 +127,16 @@ export function ReportsPage() {
           <div className={styles.quickActions}>
             <Button variant="primary" onClick={() => void downloadPdf(report.report_id!)}>
               Download PDF report
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setUploadStep("review");
+                setPage("upload");
+                setStatus("Adjust role or stack, then analyze again.");
+              }}
+            >
+              Analyze again
             </Button>
             <Text muted tiny>
               Tip: click <strong>Compare</strong> on any row to see progress vs your active report.

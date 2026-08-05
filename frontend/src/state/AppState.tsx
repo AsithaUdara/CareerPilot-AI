@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -7,9 +8,41 @@ import {
   useState,
   type PropsWithChildren
 } from "react";
-import { getProfile, getReport, listReports } from "@/api/client";
-import { loadSession, saveSession } from "@/lib/session";
-import type { CandidateProfile, CareerReadinessReport, PageId, ReportSummary } from "@/types";
+import {
+  finishAnalysisJob,
+  getJobStatus,
+  getProfile,
+  getReport,
+  listMyCandidates,
+  listReports,
+  startAnalysis
+} from "@/api/client";
+import { clearAuth, loadAuth, saveAuth } from "@/lib/authStorage";
+import { humanizeError } from "@/lib/errors";
+import { clearSession, loadSession, saveSession } from "@/lib/session";
+import type {
+  AnalysisJobStatus,
+  AuthUser,
+  CandidateProfile,
+  CandidateSummary,
+  CareerReadinessReport,
+  PageId,
+  ReportSummary,
+  UploadStep
+} from "@/types";
+
+const STAGE_LABELS: Record<string, string> = {
+  queued: "Queued on Celery",
+  resume_analysis: "Resume Analysis Agent (Gemini)",
+  job_matching: "Job Matching — Adzuna + curated RAG",
+  skill_gaps: "Skill Gap Agent",
+  learning_roadmap: "Learning Planner Agent",
+  resume_optimization: "Resume Optimization Agent",
+  interview_coach: "Interview Coach Agent",
+  report_composition: "Report Composition",
+  completed: "Completed",
+  failed: "Failed"
+};
 
 type AppState = {
   page: PageId;
@@ -39,6 +72,21 @@ type AppState = {
   busy: boolean;
   setBusy: (busy: boolean) => void;
   sessionReady: boolean;
+  uploadStep: UploadStep;
+  setUploadStep: (step: UploadStep) => void;
+  analysisJob: AnalysisJobStatus | null;
+  setAnalysisJob: (job: AnalysisJobStatus | null) => void;
+  analysisError: string | null;
+  setAnalysisError: (error: string | null) => void;
+  authUser: AuthUser | null;
+  authToken: string | null;
+  myCandidates: CandidateSummary[];
+  refreshMyCandidates: () => Promise<void>;
+  completeSignIn: (token: string, user: AuthUser) => void;
+  logout: () => void;
+  clearWorkspace: () => void;
+  runAnalysis: () => Promise<void>;
+  resumeJobPoll: (jobId: string) => Promise<void>;
 };
 
 const AppStateContext = createContext<AppState | null>(null);
@@ -58,34 +106,205 @@ export function AppStateProvider({ children }: PropsWithChildren) {
   const [status, setStatus] = useState("Ready to start");
   const [busy, setBusy] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
+  const [uploadStep, setUploadStep] = useState<UploadStep>("intake");
+  const [analysisJob, setAnalysisJob] = useState<AnalysisJobStatus | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [myCandidates, setMyCandidates] = useState<CandidateSummary[]>([]);
   const hydrated = useRef(false);
+  const pollingRef = useRef(false);
+
+  const refreshMyCandidates = useCallback(async () => {
+    if (!loadAuth()?.token) {
+      setMyCandidates([]);
+      return;
+    }
+    try {
+      const rows = await listMyCandidates();
+      setMyCandidates(rows);
+    } catch {
+      setMyCandidates([]);
+    }
+  }, []);
+
+  const completeSignIn = useCallback(
+    (token: string, user: AuthUser) => {
+      saveAuth({ token, user });
+      setAuthToken(token);
+      setAuthUser(user);
+      setStatus(`Signed in as ${user.name || user.email}`);
+      void refreshMyCandidates();
+    },
+    [refreshMyCandidates]
+  );
+
+  const clearWorkspace = useCallback(() => {
+    clearSession();
+    setFile(null);
+    setCandidateId("");
+    setProfile(null);
+    setReport(null);
+    setReports([]);
+    setAnalysisJob(null);
+    setAnalysisError(null);
+    setUploadStep("intake");
+    setBusy(false);
+    setStatus("Workspace cleared — upload a resume to start.");
+    setPage("upload");
+  }, []);
+
+  const logout = useCallback(() => {
+    clearAuth();
+    setAuthToken(null);
+    setAuthUser(null);
+    setMyCandidates([]);
+    clearWorkspace();
+    setPage("landing");
+    setStatus("Signed out.");
+  }, [clearWorkspace]);
+
+  const finishJobSuccess = useCallback(
+    async (data: CareerReadinessReport, activeCandidateId: string) => {
+      setReport(data);
+      setProfile(data.profile);
+      try {
+        const saved = await listReports(activeCandidateId);
+        setReports(saved);
+      } catch {
+        /* ignore */
+      }
+      setUploadStep("done");
+      setBusy(false);
+      setAnalysisError(null);
+      setStatus(
+        data.job_source === "live" || data.job_source === "live+curated"
+          ? `Analysis complete using ${data.job_source} job source.`
+          : "Analysis complete using curated real job descriptions."
+      );
+      void refreshMyCandidates();
+    },
+    [refreshMyCandidates]
+  );
+
+  const resumeJobPoll = useCallback(
+    async (jobId: string) => {
+      if (pollingRef.current) return;
+      pollingRef.current = true;
+      setBusy(true);
+      setUploadStep("running");
+      setAnalysisError(null);
+      try {
+        const data = await finishAnalysisJob(jobId, (progressJob) => {
+          setAnalysisJob(progressJob);
+          setStatus(
+            `${STAGE_LABELS[progressJob.stage] || progressJob.stage} (${progressJob.progress}%)`
+          );
+        });
+        await finishJobSuccess(data, data.candidate_id || candidateId);
+      } catch (error) {
+        const message = humanizeError(error);
+        setAnalysisError(message);
+        setStatus(message);
+        setUploadStep("review");
+        setBusy(false);
+      } finally {
+        pollingRef.current = false;
+      }
+    },
+    [candidateId, finishJobSuccess]
+  );
+
+  const runAnalysis = useCallback(async () => {
+    if (!candidateId || busy || pollingRef.current) return;
+    pollingRef.current = true;
+    setBusy(true);
+    setUploadStep("running");
+    setAnalysisError(null);
+    setAnalysisJob(null);
+    setStatus("Dispatching multi-agent analysis job...");
+    try {
+      const accepted = await startAnalysis(candidateId, targetRole, seniorityLevel, stackEmphasis);
+      setAnalysisJob({
+        job_id: accepted.job_id,
+        candidate_id: candidateId,
+        target_role: targetRole,
+        seniority_level: seniorityLevel,
+        status: "queued",
+        stage: "queued",
+        progress: 0,
+        message: accepted.message
+      });
+      const data = await finishAnalysisJob(accepted.job_id, (progressJob) => {
+        setAnalysisJob(progressJob);
+        setStatus(
+          `${STAGE_LABELS[progressJob.stage] || progressJob.stage} (${progressJob.progress}%)`
+        );
+      });
+      await finishJobSuccess(data, candidateId);
+    } catch (error) {
+      const message = humanizeError(error);
+      setAnalysisError(message);
+      setStatus(message);
+      setUploadStep("review");
+      setBusy(false);
+    } finally {
+      pollingRef.current = false;
+    }
+  }, [busy, candidateId, finishJobSuccess, seniorityLevel, stackEmphasis, targetRole]);
 
   useEffect(() => {
     if (hydrated.current) return;
     hydrated.current = true;
 
+    const auth = loadAuth();
+    if (auth?.token && auth.user) {
+      setAuthToken(auth.token);
+      setAuthUser(auth.user);
+    }
+
     const session = loadSession();
-    if (!session?.candidateId) {
+    if (!session?.candidateId && !auth?.token) {
       setSessionReady(true);
       return;
     }
 
-    setCandidateId(session.candidateId);
-    setTargetRole(session.targetRole || "Backend Developer");
-    setSeniorityLevel(session.seniorityLevel || "Junior");
-    setStackEmphasis(session.stackEmphasis || []);
-    setGithubUrl(session.githubUrl || "");
-    setLinkedinUrl(session.linkedinUrl || "");
-    if (session.page && session.page !== "landing") {
-      setPage(session.page);
+    if (session?.candidateId) {
+      setCandidateId(session.candidateId);
+      setTargetRole(session.targetRole || "Backend Developer");
+      setSeniorityLevel(session.seniorityLevel || "Junior");
+      setStackEmphasis(session.stackEmphasis || []);
+      setGithubUrl(session.githubUrl || "");
+      setLinkedinUrl(session.linkedinUrl || "");
+      if (session.uploadStep) setUploadStep(session.uploadStep);
+      if (session.page && session.page !== "landing") {
+        setPage(session.page);
+      }
     }
 
     void (async () => {
+      if (auth?.token) {
+        try {
+          const rows = await listMyCandidates();
+          setMyCandidates(rows);
+        } catch {
+          /* token may be stale */
+        }
+      }
+
+      if (!session?.candidateId) {
+        setSessionReady(true);
+        return;
+      }
+
       try {
         const loadedProfile = await getProfile(session.candidateId);
         setProfile(loadedProfile);
         if (loadedProfile.github_url) setGithubUrl(loadedProfile.github_url);
         if (loadedProfile.linkedin_url) setLinkedinUrl(loadedProfile.linkedin_url);
+        if (!session.uploadStep || session.uploadStep === "intake") {
+          setUploadStep("review");
+        }
       } catch {
         /* profile may have been cleared */
       }
@@ -102,20 +321,50 @@ export function AppStateProvider({ children }: PropsWithChildren) {
           const loadedReport = await getReport(session.reportId);
           setReport(loadedReport);
           setStatus("Session restored — continue from your last analysis.");
+          if (session.uploadStep !== "running") {
+            setUploadStep(session.uploadStep === "done" ? "done" : "review");
+          }
         } catch {
           /* report missing */
         }
       } else {
-        setStatus("Session restored — upload or run a new analysis.");
+        setStatus("Session restored — verify your profile, then run analysis.");
+      }
+
+      if (session.jobId) {
+        try {
+          const job = await getJobStatus(session.jobId);
+          setAnalysisJob(job);
+          if (job.status === "queued" || job.status === "running") {
+            setUploadStep("running");
+            setPage("upload");
+            setSessionReady(true);
+            void resumeJobPoll(session.jobId);
+            return;
+          }
+          if (job.status === "completed" && job.report_id) {
+            const loaded = await getReport(job.report_id);
+            await finishJobSuccess(loaded, session.candidateId);
+          } else if (job.status === "failed") {
+            setAnalysisError(humanizeError(job.error || "Analysis failed"));
+            setUploadStep("review");
+          }
+        } catch {
+          /* job gone */
+        }
       }
 
       setSessionReady(true);
     })();
-  }, []);
+  }, [finishJobSuccess, resumeJobPoll]);
 
   useEffect(() => {
     if (!sessionReady) return;
     if (!candidateId && !report?.report_id) return;
+
+    const running =
+      analysisJob &&
+      (analysisJob.status === "queued" || analysisJob.status === "running");
 
     saveSession({
       candidateId,
@@ -125,7 +374,9 @@ export function AppStateProvider({ children }: PropsWithChildren) {
       githubUrl,
       linkedinUrl,
       reportId: report?.report_id ?? null,
-      page
+      page,
+      uploadStep,
+      jobId: running ? analysisJob.job_id : null
     });
   }, [
     sessionReady,
@@ -136,7 +387,9 @@ export function AppStateProvider({ children }: PropsWithChildren) {
     githubUrl,
     linkedinUrl,
     report?.report_id,
-    page
+    page,
+    uploadStep,
+    analysisJob
   ]);
 
   const value = useMemo(
@@ -167,7 +420,22 @@ export function AppStateProvider({ children }: PropsWithChildren) {
       setStatus,
       busy,
       setBusy,
-      sessionReady
+      sessionReady,
+      uploadStep,
+      setUploadStep,
+      analysisJob,
+      setAnalysisJob,
+      analysisError,
+      setAnalysisError,
+      authUser,
+      authToken,
+      myCandidates,
+      refreshMyCandidates,
+      completeSignIn,
+      logout,
+      clearWorkspace,
+      runAnalysis,
+      resumeJobPoll
     }),
     [
       page,
@@ -183,7 +451,19 @@ export function AppStateProvider({ children }: PropsWithChildren) {
       reports,
       status,
       busy,
-      sessionReady
+      sessionReady,
+      uploadStep,
+      analysisJob,
+      analysisError,
+      authUser,
+      authToken,
+      myCandidates,
+      refreshMyCandidates,
+      completeSignIn,
+      logout,
+      clearWorkspace,
+      runAnalysis,
+      resumeJobPoll
     ]
   );
 

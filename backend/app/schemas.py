@@ -206,3 +206,28 @@ class WorkspaceInsightsResponse(BaseModel):
     average_readiness: Optional[float] = None
     role_distribution: List[RoleCount] = Field(default_factory=list)
     recent_reports: List[ReadinessPoint] = Field(default_factory=list)
+
+
+class GoogleAuthRequest(BaseModel):
+    id_token: str
+
+
+class AuthUserResponse(BaseModel):
+    id: str
+    email: str
+    name: str
+    picture_url: str = ""
+
+
+class AuthTokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: AuthUserResponse
+
+
+class CandidateSummary(BaseModel):
+    candidate_id: str
+    filename: str
+    summary: str
+    created_at: Optional[str] = None
+

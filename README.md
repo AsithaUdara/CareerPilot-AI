@@ -34,7 +34,8 @@ After uploading a resume, CareerPilot:
 2. Set `POSTGRES_PASSWORD` / `DATABASE_URL`
 3. Set `GOOGLE_API_KEY` (required for real analysis)
 4. Optional: `ADZUNA_APP_ID` + `ADZUNA_APP_KEY` for live jobs
-5. Run:
+5. Optional Google Sign-In: set `GOOGLE_OAUTH_CLIENT_ID` + matching `VITE_GOOGLE_CLIENT_ID`, set `AUTH_DISABLED=0`, and `JWT_SECRET`
+6. Run:
 
 ```powershell
 cd backend

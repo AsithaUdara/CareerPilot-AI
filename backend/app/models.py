@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Float, Integer, String, Text
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
@@ -10,10 +10,24 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+class UserModel(Base):
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    google_sub: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    email: Mapped[str] = mapped_column(String(255), index=True)
+    name: Mapped[str] = mapped_column(String(255), default="")
+    picture_url: Mapped[str] = mapped_column(String(512), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+
 class CandidateProfileModel(Base):
     __tablename__ = "candidate_profiles"
 
     candidate_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str | None] = mapped_column(
+        String(64), ForeignKey("users.id"), nullable=True, index=True
+    )
     filename: Mapped[str] = mapped_column(String(255))
     summary: Mapped[str] = mapped_column(Text)
     skills_csv: Mapped[str] = mapped_column(Text, default="")

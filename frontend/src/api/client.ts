@@ -1,7 +1,11 @@
+import { loadAuth } from "@/lib/authStorage";
+import { humanizeError } from "@/lib/errors";
 import type {
   AnalysisJobStatus,
   AnalyzeJobAccepted,
+  AuthUser,
   CandidateProfile,
+  CandidateSummary,
   CareerAnalytics,
   CareerReadinessReport,
   MentorChatMessage,
@@ -15,18 +19,65 @@ export const API_BASE =
   (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, "") ||
   "http://127.0.0.1:8000";
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+function authHeaders(extra?: HeadersInit): HeadersInit {
+  const headers = new Headers(extra);
+  const auth = loadAuth();
+  if (auth?.token) {
+    headers.set("Authorization", `Bearer ${auth.token}`);
+  }
+  return headers;
+}
+
 async function parseJson<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let detail = `Request failed (${res.status})`;
     try {
-      const body = (await res.json()) as { detail?: string };
-      if (body?.detail) detail = body.detail;
+      const body = (await res.json()) as { detail?: string | { msg?: string }[] };
+      if (typeof body?.detail === "string") {
+        detail = body.detail;
+      } else if (Array.isArray(body?.detail) && body.detail[0]?.msg) {
+        detail = body.detail[0].msg;
+      }
     } catch {
       /* ignore */
     }
-    throw new Error(detail);
+    throw new ApiError(humanizeError(detail), res.status);
   }
   return res.json() as Promise<T>;
+}
+
+export async function signInWithGoogle(idToken: string): Promise<{ access_token: string; user: AuthUser }> {
+  const res = await fetch(`${API_BASE}/auth/google`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id_token: idToken })
+  });
+  return parseJson(res);
+}
+
+export async function getMe(): Promise<AuthUser> {
+  const res = await fetch(`${API_BASE}/auth/me`, { headers: authHeaders() });
+  return parseJson(res);
+}
+
+export async function listMyCandidates(): Promise<CandidateSummary[]> {
+  const res = await fetch(`${API_BASE}/me/candidates`, { headers: authHeaders() });
+  return parseJson(res);
+}
+
+export async function listMyReports(): Promise<ReportSummary[]> {
+  const res = await fetch(`${API_BASE}/me/reports`, { headers: authHeaders() });
+  return parseJson(res);
 }
 
 export async function uploadResume(
@@ -39,13 +90,16 @@ export async function uploadResume(
   if (options?.linkedinUrl) formData.append("linkedin_url", options.linkedinUrl);
   const res = await fetch(`${API_BASE}/resume/upload`, {
     method: "POST",
+    headers: authHeaders(),
     body: formData
   });
   return parseJson<UploadResponse>(res);
 }
 
 export async function getProfile(candidateId: string): Promise<CandidateProfile> {
-  const res = await fetch(`${API_BASE}/candidates/${candidateId}/profile`);
+  const res = await fetch(`${API_BASE}/candidates/${candidateId}/profile`, {
+    headers: authHeaders()
+  });
   return parseJson<CandidateProfile>(res);
 }
 
@@ -57,7 +111,7 @@ export async function startAnalysis(
 ): Promise<AnalyzeJobAccepted> {
   const res = await fetch(`${API_BASE}/analyze`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({
       candidate_id: candidateId,
       target_role: targetRole,
@@ -69,7 +123,7 @@ export async function startAnalysis(
 }
 
 export async function getJobStatus(jobId: string): Promise<AnalysisJobStatus> {
-  const res = await fetch(`${API_BASE}/jobs/${jobId}`);
+  const res = await fetch(`${API_BASE}/jobs/${jobId}`, { headers: authHeaders() });
   return parseJson<AnalysisJobStatus>(res);
 }
 
@@ -87,7 +141,10 @@ export async function waitForAnalysisJob(
     }
     await new Promise((resolve) => setTimeout(resolve, 700));
   }
-  throw new Error("Timed out waiting for analysis job");
+  throw new ApiError(
+    humanizeError("Timed out waiting for analysis job"),
+    408
+  );
 }
 
 export async function analyzeCandidate(
@@ -98,30 +155,41 @@ export async function analyzeCandidate(
   onProgress?: (job: AnalysisJobStatus) => void
 ): Promise<CareerReadinessReport> {
   const accepted = await startAnalysis(candidateId, targetRole, seniorityLevel, stackEmphasis);
-  const job = await waitForAnalysisJob(accepted.job_id, onProgress);
+  return finishAnalysisJob(accepted.job_id, onProgress);
+}
+
+export async function finishAnalysisJob(
+  jobId: string,
+  onProgress?: (job: AnalysisJobStatus) => void
+): Promise<CareerReadinessReport> {
+  const job = await waitForAnalysisJob(jobId, onProgress);
   if (job.status === "failed") {
-    throw new Error(job.error || "Analysis pipeline failed");
+    throw new ApiError(humanizeError(job.error || "Analysis pipeline failed"), 500);
   }
   if (!job.report_id) {
-    throw new Error("Job completed without report_id");
+    throw new ApiError("Job completed without report_id", 500);
   }
   return getReport(job.report_id);
 }
 
 export async function listReports(candidateId: string): Promise<ReportSummary[]> {
-  const res = await fetch(`${API_BASE}/candidates/${candidateId}/reports`);
+  const res = await fetch(`${API_BASE}/candidates/${candidateId}/reports`, {
+    headers: authHeaders()
+  });
   return parseJson<ReportSummary[]>(res);
 }
 
 export async function getReport(reportId: string): Promise<CareerReadinessReport> {
-  const res = await fetch(`${API_BASE}/reports/${reportId}`);
+  const res = await fetch(`${API_BASE}/reports/${reportId}`, { headers: authHeaders() });
   return parseJson<CareerReadinessReport>(res);
 }
 
 export async function exportReportPdf(reportId: string): Promise<Blob> {
-  const res = await fetch(`${API_BASE}/reports/${reportId}/export.pdf`);
+  const res = await fetch(`${API_BASE}/reports/${reportId}/export.pdf`, {
+    headers: authHeaders()
+  });
   if (!res.ok) {
-    throw new Error(`Export failed (${res.status})`);
+    throw new ApiError(humanizeError(`Export failed (${res.status})`), res.status);
   }
   return res.blob();
 }
@@ -134,7 +202,7 @@ export async function chatWithMentor(
 ): Promise<MentorChatResponse> {
   const res = await fetch(`${API_BASE}/mentor/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({
       candidate_id: candidateId,
       message,
@@ -146,12 +214,14 @@ export async function chatWithMentor(
 }
 
 export async function getCandidateAnalytics(candidateId: string): Promise<CareerAnalytics> {
-  const res = await fetch(`${API_BASE}/candidates/${candidateId}/analytics`);
+  const res = await fetch(`${API_BASE}/candidates/${candidateId}/analytics`, {
+    headers: authHeaders()
+  });
   return parseJson<CareerAnalytics>(res);
 }
 
 export async function getWorkspaceInsights(): Promise<WorkspaceInsights> {
-  const res = await fetch(`${API_BASE}/workspace/insights`);
+  const res = await fetch(`${API_BASE}/workspace/insights`, { headers: authHeaders() });
   return parseJson<WorkspaceInsights>(res);
 }
 

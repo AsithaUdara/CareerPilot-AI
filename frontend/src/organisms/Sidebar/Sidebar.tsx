@@ -20,10 +20,11 @@ const NAV_ITEMS: NavItemConfig[] = [
 type SidebarProps = {
   page: PageId;
   hasReport: boolean;
+  busy?: boolean;
   onNavigate: (id: PageId) => void;
 };
 
-export function Sidebar({ page, hasReport, onNavigate }: SidebarProps) {
+export function Sidebar({ page, hasReport, busy = false, onNavigate }: SidebarProps) {
   return (
     <aside className={styles.sidebar}>
       <button
@@ -54,16 +55,18 @@ export function Sidebar({ page, hasReport, onNavigate }: SidebarProps) {
       <div className={styles.footer}>
         <p className={styles.footerTitle}>Next action</p>
         <Text muted>
-          {hasReport
-            ? "Review skill gaps, then execute Day 1 of your hiring sprint."
-            : "Upload a resume to generate your readiness report."}
+          {busy
+            ? "Agents are running — progress continues even if you switch pages."
+            : hasReport
+              ? "Review skill gaps, then execute Day 1 of your hiring sprint."
+              : "Upload a resume, verify the extracted profile, then run analysis."}
         </Text>
         <Button
           variant="primary"
           block
-          onClick={() => onNavigate(hasReport ? "gaps" : "upload")}
+          onClick={() => onNavigate(busy ? "upload" : hasReport ? "gaps" : "upload")}
         >
-          {hasReport ? "Open Skill Gaps" : "Start Upload"}
+          {busy ? "View progress" : hasReport ? "Open Skill Gaps" : "Start Upload"}
         </Button>
       </div>
     </aside>

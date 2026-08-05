@@ -10,6 +10,22 @@ export type PageId =
   | "analytics"
   | "insights";
 
+export type UploadStep = "intake" | "review" | "running" | "done";
+
+export type AuthUser = {
+  id: string;
+  email: string;
+  name: string;
+  picture_url: string;
+};
+
+export type CandidateSummary = {
+  candidate_id: string;
+  filename: string;
+  summary: string;
+  created_at?: string | null;
+};
+
 export type AgentOutput = {
   name: string;
   strengths: string[];

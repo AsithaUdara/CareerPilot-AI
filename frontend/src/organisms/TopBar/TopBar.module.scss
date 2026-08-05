@@ -37,6 +37,49 @@
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.busyTag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1559c5;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(31, 122, 239, 0.12);
+  animation: pulse 1.4s ease infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.guest {
+  font-size: 0.75rem;
+  color: $muted;
+  font-family: $font-body;
+}
+
+.reset {
+  border: 1px solid rgba(27, 36, 51, 0.12);
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(31, 122, 239, 0.35);
+  }
 }
 
 @media (max-width: 720px) {

@@ -1,4 +1,4 @@
-import type { PageId } from "@/types";
+import type { PageId, UploadStep } from "@/types";
 
 const STORAGE_KEY = "careerpilot_session_v1";
 
@@ -11,6 +11,8 @@ export type PersistedSession = {
   linkedinUrl: string;
   reportId: string | null;
   page: PageId;
+  uploadStep?: UploadStep;
+  jobId?: string | null;
 };
 
 export function loadSession(): PersistedSession | null {

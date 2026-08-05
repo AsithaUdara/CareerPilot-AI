@@ -5,7 +5,7 @@ import { useAppState } from "@/state/AppState";
 import styles from "./AppShell.module.scss";
 
 export function AppShell({ children }: PropsWithChildren) {
-  const { page, setPage, report, status, candidateId } = useAppState();
+  const { page, setPage, report, status, busy } = useAppState();
 
   return (
     <div className={styles.shell}>
@@ -13,9 +13,9 @@ export function AppShell({ children }: PropsWithChildren) {
       <div className={`${styles.ambient} ${styles.b}`} />
       <div className={`${styles.ambient} ${styles.c}`} />
       <div className={styles.gridGlow} />
-      <Sidebar page={page} hasReport={Boolean(report)} onNavigate={setPage} />
+      <Sidebar page={page} hasReport={Boolean(report)} busy={busy} onNavigate={setPage} />
       <div className={styles.main}>
-        <TopBar page={page} status={status} candidateId={candidateId} />
+        <TopBar page={page} status={status} />
         <main className={styles.content}>{children}</main>
       </div>
     </div>

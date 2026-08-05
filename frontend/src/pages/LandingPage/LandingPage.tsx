@@ -6,6 +6,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PropsWithChildren
 } from "react";
+import { GoogleSignIn } from "@/molecules/GoogleSignIn";
 import { useAppState } from "@/state/AppState";
 import styles from "./LandingPage.module.scss";
 
@@ -86,7 +87,7 @@ function TiltCard({ children, className = "" }: PropsWithChildren<{ className?: 
 }
 
 export function LandingPage() {
-  const { setPage } = useAppState();
+  const { setPage, authUser } = useAppState();
   const heroRef = useRef<HTMLDivElement | null>(null);
 
   const onHeroMove = useCallback((e: ReactMouseEvent<HTMLDivElement>) => {
@@ -118,9 +119,12 @@ export function LandingPage() {
           <a href="#pipeline">How it works</a>
           <a href="#stack">Stack</a>
         </div>
-        <button className={styles.navCta} onClick={enter}>
-          Launch App
-        </button>
+        <div className={styles.navAuth}>
+          <GoogleSignIn />
+          <button className={styles.navCta} onClick={enter}>
+            {authUser ? "Open workspace" : "Launch App"}
+          </button>
+        </div>
       </nav>
 
       <header className={styles.hero} ref={heroRef} onMouseMove={onHeroMove}>
