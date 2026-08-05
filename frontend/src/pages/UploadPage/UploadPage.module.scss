@@ -1,32 +1,202 @@
+@use "@/styles/tokens" as *;
+
 .grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   gap: 16px;
 }
 
+.kicker {
+  @include kicker;
+  display: block;
+  margin-bottom: 4px;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 16px;
+  margin-top: 18px;
 }
 
-.timeline {
-  list-style: none;
-  margin: 0 0 16px;
-  padding: 0;
-  display: grid;
-  gap: 10px;
+/* profile preview */
 
-  li {
-    padding: 10px 12px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.45);
-    border-left: 3px solid rgba(27, 36, 51, 0.15);
+.preview {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(27, 36, 51, 0.08);
+  display: grid;
+  gap: 14px;
+}
+
+.previewBlock {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.previewLabel {
+  @include kicker;
+  color: $muted;
+  margin: 0;
+}
+
+.bullets {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 5px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+/* pipeline tracker */
+
+.progressWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 14px;
+}
+
+.progressTrack {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(27, 36, 51, 0.08);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, $accent, $violet, $accent-2);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+  transition: width 500ms ease;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 200% 50%;
   }
 }
 
-.done {
-  border-left-color: #12a39a !important;
-  background: rgba(18, 163, 154, 0.12) !important;
+.progressPct {
+  font-family: $font-display;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.pipeline {
+  list-style: none;
+  margin: 8px 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  position: relative;
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 9px 10px;
+  border-radius: 13px;
+  transition: background 240ms ease;
+
+  &:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 26px;
+    top: 42px;
+    bottom: -8px;
+    width: 2px;
+    background: rgba(27, 36, 51, 0.08);
+  }
+}
+
+.stageIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(27, 36, 51, 0.08);
+  z-index: 1;
+  transition: background 240ms ease, color 240ms ease, box-shadow 240ms ease;
+}
+
+.stageName {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 2px 0 1px;
+}
+
+.stageDetail {
+  color: $muted;
+  font-size: 0.78rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.stageDone {
+  .stageIcon {
+    background: linear-gradient(135deg, $accent-2, #0c8f87);
+    color: #fff;
+    border-color: transparent;
+  }
+
+  &::after {
+    background: linear-gradient(180deg, $accent-2, rgba(18, 163, 154, 0.2)) !important;
+  }
+}
+
+.stageActive {
+  background: linear-gradient(120deg, rgba(31, 122, 239, 0.1), rgba(124, 92, 255, 0.08));
+
+  .stageIcon {
+    background: linear-gradient(135deg, $accent, $violet);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 0 0 4px rgba(31, 122, 239, 0.16);
+    animation: activePulse 1.6s ease infinite;
+  }
+
+  .stageName {
+    color: #1559c5;
+  }
+}
+
+@keyframes activePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 4px rgba(31, 122, 239, 0.16);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(31, 122, 239, 0.06);
+  }
+}
+
+.meta {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(27, 36, 51, 0.08);
+}
+
+.metaLabel {
+  @include kicker;
+  color: $muted;
+  margin: 0 0 2px;
 }

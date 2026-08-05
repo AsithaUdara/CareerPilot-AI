@@ -1,5 +1,6 @@
 import { AppStateProvider, useAppState } from "@/state/AppState";
 import { AppShell } from "@/templates/AppShell";
+import { LandingPage } from "@/pages/LandingPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { UploadPage } from "@/pages/UploadPage";
 import { ReadinessPage } from "@/pages/ReadinessPage";
@@ -9,6 +10,10 @@ import { ReportsPage } from "@/pages/ReportsPage";
 
 function Shell() {
   const { page } = useAppState();
+
+  if (page === "landing") {
+    return <LandingPage />;
+  }
 
   return (
     <AppShell>

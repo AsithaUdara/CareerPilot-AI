@@ -1,50 +1,136 @@
+@use "@/styles/tokens" as *;
+
 .grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   gap: 16px;
 }
 
+.kicker {
+  @include kicker;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.block {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.blockLabel {
+  @include kicker;
+  color: $muted;
+  margin: 0;
+}
+
 .gapList {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+  margin-top: 14px;
 }
 
 .gapItem {
-  display: grid;
-  grid-template-columns: 34px 1fr;
-  gap: 10px;
-  align-items: start;
-  padding: 12px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.46);
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  transition: transform 220ms ease, box-shadow 220ms ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 40px rgba(31, 74, 145, 0.14);
+  }
+
+  &:first-child .rank {
+    background: linear-gradient(135deg, $rose, #f43f6e);
+    box-shadow: 0 10px 22px rgba(225, 29, 72, 0.3);
+  }
+
+  &:nth-child(2) .rank {
+    background: linear-gradient(135deg, $amber, #f59e0b);
+    box-shadow: 0 10px 22px rgba(217, 119, 6, 0.3);
+  }
+
+  &:first-child .impact {
+    color: $rose;
+    background: rgba(225, 29, 72, 0.1);
+  }
+
+  &:nth-child(2) .impact {
+    color: $amber;
+    background: rgba(217, 119, 6, 0.12);
+  }
 }
 
 .rank {
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 13px;
   display: grid;
   place-items: center;
-  background: rgba(31, 122, 239, 0.12);
-  color: #1559c5;
+  background: linear-gradient(135deg, $accent, $violet);
+  color: #fff;
   font-weight: 700;
+  font-family: $font-display;
+  box-shadow: 0 10px 22px rgba(31, 122, 239, 0.28);
+}
+
+.gapBody {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.gapTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
 }
 
 .gapName {
   font-weight: 600;
-  margin: 0 0 2px;
+  font-family: $font-display;
+  margin: 0;
+}
+
+.impact {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #1559c5;
+  background: rgba(31, 122, 239, 0.1);
 }
 
 .meter {
-  grid-column: 2;
-  height: 6px;
+  height: 7px;
   border-radius: 999px;
   background: rgba(27, 36, 51, 0.08);
   overflow: hidden;
+  margin-top: 2px;
 
   span {
     display: block;
     height: 100%;
-    background: linear-gradient(90deg, #1f7aef, #12a39a);
+    border-radius: inherit;
+    background: linear-gradient(90deg, $accent, $violet, $accent-2);
+    animation: growBar 900ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
+    transform-origin: left;
+  }
+}
+
+@keyframes growBar {
+  from {
+    transform: scaleX(0);
   }
 }

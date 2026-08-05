@@ -1,13 +1,38 @@
 .list {
   margin: 0;
-  padding-left: 18px;
+  padding: 0;
+  list-style: none;
   display: grid;
-  gap: 8px;
+  gap: 9px;
   color: #334155;
-  line-height: 1.45;
+  line-height: 1.5;
+
+  li {
+    position: relative;
+    padding-left: 22px;
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: 2px;
+      top: 0.52em;
+      width: 8px;
+      height: 8px;
+      border-radius: 3px;
+      background: linear-gradient(135deg, #1f7aef, #12a39a);
+      transform: rotate(45deg);
+    }
+  }
 }
 
 .compact {
   gap: 6px;
   margin-bottom: 12px;
+  font-size: 0.92rem;
+
+  li::before {
+    width: 6px;
+    height: 6px;
+    top: 0.55em;
+  }
 }

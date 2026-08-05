@@ -1,6 +1,7 @@
 import type {
   AnalysisJobStatus,
   AnalyzeJobAccepted,
+  CandidateProfile,
   CareerReadinessReport,
   ReportSummary,
   UploadResponse
@@ -12,7 +13,14 @@ export const API_BASE =
 
 async function parseJson<T>(res: Response): Promise<T> {
   if (!res.ok) {
-    throw new Error(`Request failed (${res.status})`);
+    let detail = `Request failed (${res.status})`;
+    try {
+      const body = (await res.json()) as { detail?: string };
+      if (body?.detail) detail = body.detail;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(detail);
   }
   return res.json() as Promise<T>;
 }
@@ -25,6 +33,11 @@ export async function uploadResume(file: File): Promise<UploadResponse> {
     body: formData
   });
   return parseJson<UploadResponse>(res);
+}
+
+export async function getProfile(candidateId: string): Promise<CandidateProfile> {
+  const res = await fetch(`${API_BASE}/candidates/${candidateId}/profile`);
+  return parseJson<CandidateProfile>(res);
 }
 
 export async function startAnalysis(
@@ -47,7 +60,7 @@ export async function getJobStatus(jobId: string): Promise<AnalysisJobStatus> {
 export async function waitForAnalysisJob(
   jobId: string,
   onProgress?: (job: AnalysisJobStatus) => void,
-  timeoutMs = 60000
+  timeoutMs = 180000
 ): Promise<AnalysisJobStatus> {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
@@ -93,6 +106,9 @@ export function getAgent(report: CareerReadinessReport | null, name: string) {
 
 export function estimateReadiness(report: CareerReadinessReport | null): number {
   if (!report) return 0;
+  if (typeof report.readiness_score === "number") {
+    return Math.max(0, Math.min(100, report.readiness_score));
+  }
   const skills = report.profile?.skills?.length || 0;
   const gaps = getAgent(report, "SkillGapAgent")?.gaps?.length || 0;
   const base = Math.min(92, 48 + skills * 8);

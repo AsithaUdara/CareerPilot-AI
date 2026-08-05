@@ -5,6 +5,7 @@ $muted: #6b778c;
 $line: rgba(27, 36, 51, 0.08);
 $accent: #1f7aef;
 $accent-2: #12a39a;
+$violet: #7c5cff;
 $amber: #d97706;
 $rose: #e11d48;
 $glass: rgba(255, 255, 255, 0.58);
@@ -26,4 +27,29 @@ $font-body: "DM Sans", "Segoe UI", sans-serif;
 @mixin fade-up($delay: 0ms) {
   animation: rise 520ms ease both;
   animation-delay: $delay;
+}
+
+@mixin glass-hover {
+  transition: transform 240ms ease, box-shadow 240ms ease, border-color 240ms ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 26px 60px rgba(31, 74, 145, 0.16);
+    border-color: rgba(255, 255, 255, 0.8);
+  }
+}
+
+@mixin gradient-text {
+  background: linear-gradient(92deg, $accent 0%, $violet 55%, $accent-2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@mixin kicker {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: $accent;
 }

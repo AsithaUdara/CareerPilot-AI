@@ -1,7 +1,8 @@
 .item {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
   border: 0;
   background: transparent;
@@ -9,22 +10,52 @@
   border-radius: 14px;
   padding: 11px 12px;
   cursor: pointer;
-  transition: background 180ms ease, transform 180ms ease, color 180ms ease;
+  transition: background 200ms ease, transform 200ms ease, color 200ms ease, box-shadow 200ms ease;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 3px;
+    height: 0;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #1f7aef, #12a39a);
+    transform: translateY(-50%);
+    transition: height 220ms ease;
+  }
 
   &:hover {
     background: rgba(31, 122, 239, 0.08);
-    transform: translateX(2px);
+    transform: translateX(3px);
   }
 }
 
 .active {
-  background: rgba(31, 122, 239, 0.14);
+  background: linear-gradient(120deg, rgba(31, 122, 239, 0.16), rgba(18, 163, 154, 0.1));
   color: #1559c5;
   font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(31, 122, 239, 0.14);
+
+  &::before {
+    height: 60%;
+  }
+
+  .icon {
+    background: linear-gradient(135deg, #1f7aef, #12a39a);
+    color: #fff;
+    opacity: 1;
+    box-shadow: 0 6px 14px rgba(31, 122, 239, 0.3);
+  }
 }
 
 .icon {
-  width: 22px;
-  text-align: center;
-  opacity: 0.8;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: rgba(31, 122, 239, 0.08);
+  opacity: 0.9;
+  transition: background 200ms ease, color 200ms ease, box-shadow 200ms ease;
 }

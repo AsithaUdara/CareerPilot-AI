@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app import models  # noqa: F401
+from app.config import get_settings
 from app.db import DATABASE_URL, engine, get_session
 from app.repositories.job_repository import get_job
 from app.repositories.knowledge_repository import seed_knowledge_base
@@ -47,8 +48,11 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="CareerPilot AI MVP",
-    description="Orchestrator-driven Multi-Agent Pipeline with event-driven async processing (FastAPI + Celery).",
+    title="CareerPilot AI",
+    description=(
+        "LangGraph Orchestrator-driven Multi-Agent Pipeline with Gemini, "
+        "RAG, live job tools, and event-driven Celery processing."
+    ),
     lifespan=lifespan,
 )
 app.add_middleware(
@@ -61,7 +65,8 @@ app.add_middleware(
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
+def health() -> dict:
+    settings = get_settings()
     db_status = "ok"
     try:
         with engine.connect() as conn:
@@ -72,7 +77,10 @@ def health() -> dict[str, str]:
         "status": "ok" if db_status == "ok" else "degraded",
         "database": db_status,
         "database_driver": DATABASE_URL.split(":", 1)[0],
-        "architecture": "orchestrator-multi-agent-pipeline-event-driven",
+        "architecture": "langgraph-multi-agent-pipeline-event-driven",
+        "gemini_configured": settings.gemini_configured,
+        "adzuna_configured": settings.adzuna_configured,
+        "stub_llm": settings.use_stub_llm,
     }
 
 
@@ -84,20 +92,36 @@ async def upload_resume(file: UploadFile = File(...)) -> ResumeUploadResponse:
     content = await file.read()
     target.write_bytes(content)
     raw_text = read_resume_text(target)
-    profile = parse_resume(candidate_id, file.filename, raw_text)
+    profile = parse_resume(candidate_id, file.filename or "resume", raw_text)
     with get_session() as session:
-        save_profile(session, file.filename, profile)
+        save_profile(session, file.filename or "resume", profile)
 
     return ResumeUploadResponse(
         candidate_id=candidate_id,
         filename=file.filename or "resume",
-        message="Resume uploaded and parsed.",
+        message="Resume uploaded and parsed with structured profile extraction.",
+        profile=profile,
     )
+
+
+@app.get("/candidates/{candidate_id}/profile")
+def fetch_profile(candidate_id: str):
+    with get_session() as session:
+        profile = get_profile(session, candidate_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Candidate profile not found.")
+    return profile
 
 
 @app.post("/analyze", response_model=AnalyzeJobAccepted)
 def analyze(payload: AnalyzeRequest) -> AnalyzeJobAccepted:
     """Enqueue analysis job (non-blocking). Poll GET /jobs/{job_id} for progress."""
+    settings = get_settings()
+    try:
+        settings.require_gemini()
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
     with get_session() as session:
         profile = get_profile(session, payload.candidate_id)
         if not profile:

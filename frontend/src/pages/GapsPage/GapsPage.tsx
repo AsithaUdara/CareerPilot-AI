@@ -15,6 +15,7 @@ export function GapsPage() {
   if (!report) {
     return (
       <EmptyState
+        icon="🧩"
         title="No skill-gap analysis yet"
         description="Run analysis to prioritize the skills that most affect readiness."
         actionLabel="Start Analysis"
@@ -28,20 +29,29 @@ export function GapsPage() {
   return (
     <div className={styles.grid}>
       <Panel span={5}>
+        <span className={styles.kicker}>Skill Gap Agent</span>
         <h2>Priority gaps</h2>
+        <Text muted tiny>
+          Ranked by impact on your target-role readiness.
+        </Text>
         <div className={styles.gapList}>
           {gaps.length === 0 && <Text muted>No critical gaps detected for this role.</Text>}
           {gaps.map((gap, index) => (
-            <div className={styles.gapItem} key={gap}>
+            <div className={styles.gapItem} key={`${gap}-${index}`}>
               <span className={styles.rank}>{index + 1}</span>
-              <div>
-                <p className={styles.gapName}>{gap}</p>
+              <div className={styles.gapBody}>
+                <div className={styles.gapTop}>
+                  <p className={styles.gapName}>{gap}</p>
+                  <span className={styles.impact}>
+                    {index === 0 ? "Critical" : index === 1 ? "High" : "Medium"}
+                  </span>
+                </div>
                 <Text muted tiny>
                   {gapAgent?.evidence?.[index] || "High impact for target-role screening."}
                 </Text>
-              </div>
-              <div className={styles.meter}>
-                <span style={{ width: `${90 - index * 12}%` }} />
+                <div className={styles.meter}>
+                  <span style={{ width: `${90 - index * 12}%` }} />
+                </div>
               </div>
             </div>
           ))}
@@ -49,17 +59,22 @@ export function GapsPage() {
       </Panel>
 
       <Panel span={7} delay={1}>
+        <span className={styles.kicker}>Learning Planner Agent</span>
         <h2>Learning roadmap</h2>
         <InsightList items={planAgent?.recommendations || []} />
-        <Text muted tiny>
-          Required role skills
-        </Text>
-        <TagList
-          items={(report.explainability?.required_skills || "")
-            .split(",")
-            .map((skill) => skill.trim())
-            .filter(Boolean)}
-        />
+        <div className={styles.block}>
+          <p className={styles.blockLabel}>Learning evidence (RAG)</p>
+          <InsightList compact items={planAgent?.evidence || []} />
+        </div>
+        <div className={styles.block}>
+          <p className={styles.blockLabel}>Required role skills</p>
+          <TagList
+            items={(report.explainability?.required_skills || "")
+              .split(",")
+              .map((skill) => skill.trim())
+              .filter(Boolean)}
+          />
+        </div>
       </Panel>
     </div>
   );

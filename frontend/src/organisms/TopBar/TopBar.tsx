@@ -4,6 +4,10 @@ import type { PageId } from "@/types";
 import styles from "./TopBar.module.scss";
 
 const TITLES: Record<PageId, { title: string; subtitle: string }> = {
+  landing: {
+    title: "CareerPilot AI",
+    subtitle: "Multi-agent career readiness operating system."
+  },
   dashboard: {
     title: "Readiness Dashboard",
     subtitle: "Explainable career insights and prioritized next steps."

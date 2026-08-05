@@ -9,7 +9,16 @@ import { useAppState } from "@/state/AppState";
 import styles from "./ReportsPage.module.scss";
 
 export function ReportsPage() {
-  const { candidateId, reports, setReports, setReport, setPage, setStatus } = useAppState();
+  const {
+    candidateId,
+    reports,
+    setReports,
+    setReport,
+    setProfile,
+    setPage,
+    setStatus,
+    report
+  } = useAppState();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -39,8 +48,11 @@ export function ReportsPage() {
       setStatus("Loading saved report...");
       const data = await getReport(reportId);
       setReport(data);
+      setProfile(data.profile);
       setPage("dashboard");
-      setStatus("Saved report loaded.");
+      setStatus(
+        `Loaded report (${data.job_source || "curated"} jobs, score ${data.readiness_score ?? "n/a"}).`
+      );
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not open report");
     }
@@ -58,30 +70,68 @@ export function ReportsPage() {
   }
 
   return (
-    <Panel>
-      <div className={styles.head}>
-        <h2>Saved analyses</h2>
-        <Chip>{loading ? "Refreshing..." : `${reports.length} reports`}</Chip>
-      </div>
-      <div className={styles.table}>
-        <div className={`${styles.row} ${styles.headRow}`}>
-          <span>Report</span>
-          <span>Target role</span>
-          <span>Created</span>
-          <span />
-        </div>
-        {reports.length === 0 && <Text muted>No reports saved for this candidate yet.</Text>}
-        {reports.map((item) => (
-          <div className={styles.row} key={item.report_id}>
-            <span className={styles.mono}>{item.report_id.slice(0, 8)}</span>
-            <span>{item.target_role}</span>
-            <span>{item.created_at ? new Date(item.created_at).toLocaleString() : "—"}</span>
-            <Button variant="secondary" size="sm" onClick={() => void openReport(item.report_id)}>
-              Open
-            </Button>
+    <div className={styles.stack}>
+      <Panel>
+        <div className={styles.head}>
+          <div>
+            <span className={styles.kicker}>Analysis history</span>
+            <h2>Saved analyses</h2>
           </div>
-        ))}
-      </div>
-    </Panel>
+          <Chip>{loading ? "Refreshing..." : `${reports.length} reports`}</Chip>
+        </div>
+        <div className={styles.table}>
+          <div className={`${styles.row} ${styles.headRow}`}>
+            <span>Report</span>
+            <span>Target role</span>
+            <span>Created</span>
+            <span />
+          </div>
+          {reports.length === 0 && <Text muted>No reports saved for this candidate yet.</Text>}
+          {reports.map((item) => (
+            <div className={styles.row} key={item.report_id}>
+              <span className={styles.mono}>{item.report_id.slice(0, 8)}</span>
+              <span>{item.target_role}</span>
+              <span>{item.created_at ? new Date(item.created_at).toLocaleString() : "—"}</span>
+              <Button variant="secondary" size="sm" onClick={() => void openReport(item.report_id)}>
+                Open
+              </Button>
+            </div>
+          ))}
+        </div>
+      </Panel>
+
+      {report?.matched_jobs && report.matched_jobs.length > 0 && (
+        <Panel delay={1}>
+          <div className={styles.head}>
+            <div>
+              <span className={styles.kicker}>Job Matching Agent</span>
+              <h2>Jobs from active report</h2>
+            </div>
+            <Chip>{report.job_source || "curated"}</Chip>
+          </div>
+          <div className={styles.jobStack}>
+            {report.matched_jobs.map((job) => (
+              <div className={styles.jobRow} key={job.id}>
+                <div>
+                  <Text>{job.label}</Text>
+                  <Text muted tiny>
+                    {job.required_skills?.slice(0, 6).join(", ")}
+                  </Text>
+                </div>
+                {job.url ? (
+                  <a href={job.url} target="_blank" rel="noreferrer">
+                    Open
+                  </a>
+                ) : (
+                  <Text muted tiny>
+                    {job.source}
+                  </Text>
+                )}
+              </div>
+            ))}
+          </div>
+        </Panel>
+      )}
+    </div>
   );
 }

@@ -11,6 +11,8 @@ export function AppShell({ children }: PropsWithChildren) {
     <div className={styles.shell}>
       <div className={`${styles.ambient} ${styles.a}`} />
       <div className={`${styles.ambient} ${styles.b}`} />
+      <div className={`${styles.ambient} ${styles.c}`} />
+      <div className={styles.gridGlow} />
       <Sidebar page={page} hasReport={Boolean(report)} onNavigate={setPage} />
       <div className={styles.main}>
         <TopBar page={page} status={status} candidateId={candidateId} />

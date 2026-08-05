@@ -21,28 +21,122 @@
   display: flex;
   justify-content: space-between;
   gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.kicker {
+  @include kicker;
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* hero */
+
+.hero {
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.5));
+}
+
+.heroInner {
+  display: flex;
+  gap: 28px;
   align-items: center;
-  margin-bottom: 8px;
+}
+
+.heroCopy {
+  flex: 1;
+  min-width: 0;
+
+  h2 {
+    font-size: 1.35rem;
+    margin: 4px 0 8px;
+
+    em {
+      font-style: normal;
+      @include gradient-text;
+    }
+  }
+}
+
+.ringWrap {
+  position: relative;
+  width: 148px;
+  height: 148px;
+  flex: none;
+}
+
+.ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.ringTrack {
+  fill: none;
+  stroke: rgba(27, 36, 51, 0.08);
+  stroke-width: 10;
+}
+
+.ringFill {
+  fill: none;
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.2s cubic-bezier(0.22, 0.9, 0.3, 1);
+  animation: ringIn 1.3s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+
+@keyframes ringIn {
+  from {
+    stroke-dashoffset: 326.7;
+  }
+}
+
+.ringValue {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+
+  strong {
+    font-family: $font-display;
+    font-size: 2.1rem;
+    letter-spacing: -0.02em;
+  }
+
+  span {
+    color: $muted;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
 }
 
 .lead {
-  font-size: 1.05rem;
+  font-size: 0.98rem;
+  color: #334155;
   margin-bottom: 12px;
 }
 
 .barTrack {
-  height: 10px;
+  height: 9px;
   border-radius: 999px;
   background: rgba(27, 36, 51, 0.08);
   overflow: hidden;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .barFill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, $accent, $accent-2);
-  transition: width 700ms ease;
+  background: linear-gradient(90deg, $accent, $violet, $accent-2);
+  transition: width 900ms cubic-bezier(0.22, 0.9, 0.3, 1);
+}
+
+.decisionNote {
+  color: $muted;
+  font-size: 0.85rem;
+  line-height: 1.5;
 }
 
 .actions {
@@ -50,6 +144,85 @@
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 16px;
+}
+
+/* jobs */
+
+.jobList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.jobCard {
+  position: relative;
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  display: grid;
+  gap: 8px;
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 44px rgba(31, 74, 145, 0.16);
+    border-color: rgba(31, 122, 239, 0.25);
+  }
+}
+
+.jobHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+}
+
+.matchBadge {
+  flex: none;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: $font-display;
+  color: #fff;
+  background: linear-gradient(135deg, $accent, $accent-2);
+  box-shadow: 0 8px 18px rgba(31, 122, 239, 0.28);
+}
+
+.skillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.skillChip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: #1559c5;
+  background: rgba(31, 122, 239, 0.09);
+  border: 1px solid rgba(31, 122, 239, 0.14);
+}
+
+.jobLink {
+  color: $accent;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  margin-top: 2px;
+  width: fit-content;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 @media (max-width: 1100px) {
@@ -61,5 +234,14 @@
 @media (max-width: 720px) {
   .kpiGrid {
     grid-template-columns: 1fr;
+  }
+
+  .jobList {
+    grid-template-columns: 1fr;
+  }
+
+  .heroInner {
+    flex-direction: column;
+    text-align: center;
   }
 }

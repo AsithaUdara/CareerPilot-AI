@@ -2,19 +2,27 @@
 
 .card {
   @include glass;
+  @include glass-hover;
   @include fade-up;
-  padding: 18px;
+  padding: 18px 20px;
   overflow: hidden;
   position: relative;
 
   &::after {
     content: "";
     position: absolute;
-    inset: auto -20% -40% auto;
-    width: 120px;
-    height: 120px;
+    inset: auto -18% -44% auto;
+    width: 140px;
+    height: 140px;
     border-radius: 999px;
-    opacity: 0.22;
+    opacity: 0.2;
+    filter: blur(6px);
+    transition: opacity 240ms ease, transform 240ms ease;
+  }
+
+  &:hover::after {
+    opacity: 0.32;
+    transform: scale(1.15);
   }
 }
 
@@ -23,17 +31,42 @@
 .amber::after { background: $amber; }
 .rose::after { background: $rose; }
 
+.blue .icon { background: rgba(31, 122, 239, 0.14); color: #1559c5; }
+.teal .icon { background: rgba(18, 163, 154, 0.14); color: #0c7f78; }
+.amber .icon { background: rgba(217, 119, 6, 0.14); color: $amber; }
+.rose .icon { background: rgba(225, 29, 72, 0.12); color: $rose; }
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  font-size: 0.95rem;
+}
+
 .label {
   color: $muted;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   margin: 0;
 }
 
 .value {
-  margin: 8px 0 4px;
-  font-size: 1.8rem;
+  margin: 10px 0 4px;
+  font-size: 2rem;
   font-weight: 700;
   font-family: $font-display;
+  letter-spacing: -0.02em;
 }
 
 .hint {

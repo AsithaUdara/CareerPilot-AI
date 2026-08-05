@@ -23,13 +23,18 @@ type SidebarProps = {
 export function Sidebar({ page, hasReport, onNavigate }: SidebarProps) {
   return (
     <aside className={styles.sidebar}>
-      <div className={styles.brand}>
+      <button
+        type="button"
+        className={styles.brand}
+        onClick={() => onNavigate("landing")}
+        title="Back to landing page"
+      >
         <BrandMark />
         <div>
           <p className={styles.brandName}>CareerPilot</p>
           <p className={styles.brandSub}>Readiness OS</p>
         </div>
-      </div>
+      </button>
 
       <nav className={styles.nav} aria-label="Primary">
         <p className={styles.navLabel}>Workspace</p>

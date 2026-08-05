@@ -59,6 +59,7 @@ class JobListingModel(Base):
     required_skills_csv: Mapped[str] = mapped_column(Text, default="")
     description: Mapped[str] = mapped_column(Text, default="")
     seniority: Mapped[str] = mapped_column(String(64), default="junior")
+    source_url: Mapped[str] = mapped_column(String(512), default="")
 
 
 class SkillRequirementModel(Base):

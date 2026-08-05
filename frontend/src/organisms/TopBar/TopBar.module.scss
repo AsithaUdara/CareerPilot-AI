@@ -2,17 +2,35 @@
 
 .topbar {
   @include glass;
+  position: relative;
+  overflow: hidden;
   display: flex;
   justify-content: space-between;
   gap: 16px;
   align-items: center;
   padding: 18px 22px;
   z-index: 1;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 40%;
+    height: 3px;
+    background: linear-gradient(90deg, $accent, $violet, transparent);
+    opacity: 0.7;
+  }
+
+  h1 {
+    font-size: 1.45rem;
+  }
 }
 
 .subtitle {
   color: $muted;
   margin: 0;
+  font-size: 0.92rem;
 }
 
 .right {

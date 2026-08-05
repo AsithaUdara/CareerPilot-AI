@@ -1,5 +1,80 @@
+@use "@/styles/tokens" as *;
+
 .grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   gap: 16px;
+}
+
+.kicker {
+  @include kicker;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.block {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.blockLabel {
+  @include kicker;
+  color: $muted;
+  margin: 0;
+}
+
+.strengthLabel {
+  color: #0c7f78;
+}
+
+.evidenceStack {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.evidenceCard {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-left: 3px solid rgba(31, 122, 239, 0.45);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+
+  &:hover {
+    transform: translateX(3px);
+    box-shadow: 0 12px 28px rgba(31, 74, 145, 0.1);
+  }
+}
+
+.agentHead {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 6px;
+
+  h3 {
+    margin: 0;
+  }
+}
+
+.agentIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  font-size: 1.25rem;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(31, 122, 239, 0.14), rgba(18, 163, 154, 0.14));
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.agentBlurb {
+  color: $muted;
+  font-size: 0.8rem;
+  margin: 2px 0 0;
 }

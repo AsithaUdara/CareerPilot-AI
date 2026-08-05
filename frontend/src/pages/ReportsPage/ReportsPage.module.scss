@@ -1,11 +1,26 @@
 @use "@/styles/tokens" as *;
 
+.stack {
+  display: grid;
+  gap: 16px;
+}
+
 .head {
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  align-items: center;
-  margin-bottom: 8px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+
+  h2 {
+    margin-bottom: 0;
+  }
+}
+
+.kicker {
+  @include kicker;
+  display: block;
+  margin-bottom: 4px;
 }
 
 .table {
@@ -18,22 +33,72 @@
   grid-template-columns: 1.1fr 1.2fr 1.4fr auto;
   gap: 10px;
   align-items: center;
-  padding: 12px;
+  padding: 14px 16px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.48);
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+
+  &:not(.headRow):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 32px rgba(31, 74, 145, 0.12);
+    border-color: rgba(31, 122, 239, 0.24);
+  }
 }
 
 .headRow {
   background: transparent;
+  border: 0;
+  padding-top: 4px;
+  padding-bottom: 4px;
   color: $muted;
-  font-size: 0.8rem;
+  font-size: 0.74rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
 }
 
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.85rem;
+  color: #1559c5;
+  background: rgba(31, 122, 239, 0.08);
+  padding: 4px 10px;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.jobStack {
+  display: grid;
+  gap: 10px;
+}
+
+.jobRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 32px rgba(31, 74, 145, 0.12);
+  }
+
+  a {
+    color: $accent;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }
 
 @media (max-width: 720px) {

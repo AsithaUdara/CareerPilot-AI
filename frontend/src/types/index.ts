@@ -1,4 +1,5 @@
 export type PageId =
+  | "landing"
   | "dashboard"
   | "upload"
   | "readiness"
@@ -23,6 +24,17 @@ export type CandidateProfile = {
   experience: string[];
 };
 
+export type MatchedJob = {
+  id: string;
+  label: string;
+  company: string;
+  url: string;
+  required_skills: string[];
+  description_snippet: string;
+  match_score?: number | null;
+  source: string;
+};
+
 export type CareerReadinessReport = {
   report_id?: string | null;
   candidate_id: string;
@@ -31,6 +43,9 @@ export type CareerReadinessReport = {
   agent_outputs: AgentOutput[];
   seven_day_plan: string[];
   explainability: Record<string, string>;
+  matched_jobs?: MatchedJob[];
+  readiness_score?: number | null;
+  job_source?: string;
 };
 
 export type ReportSummary = {
@@ -44,6 +59,7 @@ export type UploadResponse = {
   candidate_id: string;
   filename: string;
   message: string;
+  profile?: CandidateProfile | null;
 };
 
 export type AnalyzeJobAccepted = {

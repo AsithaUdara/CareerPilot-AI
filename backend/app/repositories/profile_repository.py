@@ -2,27 +2,19 @@ from sqlalchemy.orm import Session
 
 from app.models import CandidateProfileModel
 from app.schemas import CandidateProfile
-
-
-def _to_csv(items: list[str]) -> str:
-    return ",".join(items)
-
-
-def _from_csv(value: str) -> list[str]:
-    if not value:
-        return []
-    return [item for item in value.split(",") if item]
+from app.services.resume_parser import dump_profile_lists, load_profile_list
 
 
 def save_profile(session: Session, filename: str, profile: CandidateProfile) -> None:
+    lists = dump_profile_lists(profile)
     model = CandidateProfileModel(
         candidate_id=profile.candidate_id,
         filename=filename,
         summary=profile.summary,
-        skills_csv=_to_csv(profile.skills),
-        education_csv=_to_csv(profile.education),
-        projects_csv=_to_csv(profile.projects),
-        experience_csv=_to_csv(profile.experience),
+        skills_csv=lists["skills"],
+        education_csv=lists["education"],
+        projects_csv=lists["projects"],
+        experience_csv=lists["experience"],
     )
     session.merge(model)
 
@@ -34,8 +26,8 @@ def get_profile(session: Session, candidate_id: str) -> CandidateProfile | None:
     return CandidateProfile(
         candidate_id=model.candidate_id,
         summary=model.summary,
-        skills=_from_csv(model.skills_csv),
-        education=_from_csv(model.education_csv),
-        projects=_from_csv(model.projects_csv),
-        experience=_from_csv(model.experience_csv),
+        skills=load_profile_list(model.skills_csv),
+        education=load_profile_list(model.education_csv),
+        projects=load_profile_list(model.projects_csv),
+        experience=load_profile_list(model.experience_csv),
     )

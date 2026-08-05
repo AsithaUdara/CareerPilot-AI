@@ -40,6 +40,7 @@ def seed_knowledge_base(session: Session, *, force: bool = False) -> dict[str, i
                 required_skills_csv=_to_csv(job.get("required_skills", [])),
                 description=job.get("description", ""),
                 seniority=job.get("seniority", "junior"),
+                source_url=job.get("url", "") or job.get("source_url", ""),
             )
         )
 
@@ -79,6 +80,16 @@ def query_jobs_for_role(session: Session, target_role: str) -> list[dict]:
         .order_by(JobListingModel.id.asc())
         .all()
     )
+    if not rows:
+        # Fuzzy: match partial role key (e.g. "backend" in "backend developer")
+        token = role_key.split()[0] if role_key else ""
+        if token:
+            rows = (
+                session.query(JobListingModel)
+                .filter(JobListingModel.role_key.contains(token))
+                .order_by(JobListingModel.id.asc())
+                .all()
+            )
     return [
         {
             "title": row.title,
@@ -86,7 +97,8 @@ def query_jobs_for_role(session: Session, target_role: str) -> list[dict]:
             "required_skills": [s for s in row.required_skills_csv.split(",") if s],
             "description": row.description,
             "seniority": row.seniority,
-            "label": f"{row.title} @ {row.company} - {row.required_skills_csv.replace(',', ' + ')}",
+            "url": getattr(row, "source_url", "") or "",
+            "label": f"{row.title} @ {row.company}",
         }
         for row in rows
     ]
@@ -111,6 +123,10 @@ def query_required_skills(session: Session, target_role: str) -> list[dict]:
 
 
 def query_knowledge_docs(session: Session, target_role: str) -> list[str]:
+    return [doc["content"] for doc in query_knowledge_docs_detailed(session, target_role)]
+
+
+def query_knowledge_docs_detailed(session: Session, target_role: str) -> list[dict]:
     role_key = target_role.lower()
     rows = (
         session.query(KnowledgeDocModel)
@@ -118,4 +134,21 @@ def query_knowledge_docs(session: Session, target_role: str) -> list[str]:
         .order_by(KnowledgeDocModel.id.asc())
         .all()
     )
-    return [row.content for row in rows]
+    if not rows:
+        token = role_key.split()[0] if role_key else ""
+        if token:
+            rows = (
+                session.query(KnowledgeDocModel)
+                .filter(KnowledgeDocModel.role_key.contains(token))
+                .order_by(KnowledgeDocModel.id.asc())
+                .all()
+            )
+    return [
+        {
+            "id": row.id,
+            "category": row.category,
+            "content": row.content,
+            "title": f"{row.category}:{row.id}",
+        }
+        for row in rows
+    ]

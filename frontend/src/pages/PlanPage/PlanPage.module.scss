@@ -1,34 +1,135 @@
+@use "@/styles/tokens" as *;
+
 .grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   gap: 16px;
 }
 
+.kicker {
+  @include kicker;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.block {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.blockLabel {
+  @include kicker;
+  color: $muted;
+  margin: 0 0 8px;
+}
+
 .planList {
   list-style: none;
-  margin: 0;
+  margin: 18px 0 0;
   padding: 0;
   display: grid;
-  gap: 10px;
+  gap: 0;
 
   li {
-    display: grid;
-    grid-template-columns: 46px 1fr;
-    gap: 12px;
-    align-items: center;
-    padding: 12px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.48);
+    position: relative;
+    display: flex;
+    gap: 16px;
+    padding-bottom: 14px;
+
+    &:not(:last-child) .dayCol::after {
+      content: "";
+      position: absolute;
+      left: 26px;
+      top: 56px;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(180deg, rgba(31, 122, 239, 0.35), rgba(18, 163, 154, 0.15));
+    }
+
+    &:hover .stepCard {
+      transform: translateX(4px);
+      border-color: rgba(31, 122, 239, 0.3);
+      box-shadow: 0 14px 32px rgba(31, 74, 145, 0.12);
+    }
   }
 }
 
+.dayCol {
+  flex: none;
+}
+
 .day {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
   display: grid;
   place-items: center;
+  gap: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
   font-weight: 700;
-  color: #1559c5;
-  background: rgba(31, 122, 239, 0.12);
+  font-family: $font-display;
+  font-size: 1.15rem;
+  line-height: 1;
+  color: #fff;
+  background: linear-gradient(135deg, $accent, $violet 80%);
+  box-shadow: 0 12px 26px rgba(31, 122, 239, 0.3);
+
+  small {
+    font-size: 0.58rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.85;
+  }
+}
+
+.stepCard {
+  flex: 1;
+  align-self: center;
+  padding: 14px 18px;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+
+  p {
+    margin: 0;
+    line-height: 1.55;
+  }
+}
+
+.agentHead {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 12px;
+
+  h2 {
+    margin: 0;
+  }
+}
+
+.agentIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  font-size: 1.3rem;
+  border-radius: 15px;
+  background: linear-gradient(135deg, rgba(31, 122, 239, 0.14), rgba(18, 163, 154, 0.14));
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.twoCol {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 24px;
+  margin-top: 8px;
+}
+
+@media (max-width: 900px) {
+  .twoCol {
+    grid-template-columns: 1fr;
+  }
 }
