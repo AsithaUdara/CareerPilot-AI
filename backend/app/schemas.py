@@ -189,6 +189,12 @@ class RoleCount(BaseModel):
     count: int
 
 
+class GapFrequency(BaseModel):
+    gap: str
+    count: int
+    status: str = "current"  # persistent | improving | new | current
+
+
 class CareerAnalyticsResponse(BaseModel):
     candidate_id: str
     report_count: int
@@ -198,6 +204,15 @@ class CareerAnalyticsResponse(BaseModel):
     score_delta: Optional[int] = None
     closed_gaps: List[str] = Field(default_factory=list)
     new_gaps: List[str] = Field(default_factory=list)
+    latest_score: Optional[int] = None
+    best_score: Optional[int] = None
+    average_score: Optional[float] = None
+    latest_role: str = ""
+    skills_tracked: int = 0
+    matched_jobs: int = 0
+    gap_frequency: List[GapFrequency] = Field(default_factory=list)
+    next_focus: List[str] = Field(default_factory=list)
+    insight: str = ""
 
 
 class WorkspaceInsightsResponse(BaseModel):
@@ -210,6 +225,12 @@ class WorkspaceInsightsResponse(BaseModel):
 
 class GoogleAuthRequest(BaseModel):
     id_token: str
+
+
+class EmailAuthRequest(BaseModel):
+    email: str
+    password: str
+    name: str = ""
 
 
 class AuthUserResponse(BaseModel):

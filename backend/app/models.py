@@ -14,10 +14,11 @@ class UserModel(Base):
     __tablename__ = "users"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    google_sub: Mapped[str] = mapped_column(String(128), unique=True, index=True)
-    email: Mapped[str] = mapped_column(String(255), index=True)
+    google_sub: Mapped[str | None] = mapped_column(String(128), unique=True, index=True, nullable=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(255), default="")
     picture_url: Mapped[str] = mapped_column(String(512), default="")
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
 

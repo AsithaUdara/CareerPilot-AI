@@ -1,5 +1,5 @@
-import { GoogleSignIn } from "@/molecules/GoogleSignIn";
 import { StatusPill } from "@/molecules/StatusPill";
+import { UserAuthChip } from "@/molecules/GoogleSignIn/GoogleSignIn";
 import type { PageId } from "@/types";
 import { useAppState } from "@/state/AppState";
 import styles from "./TopBar.module.scss";
@@ -10,11 +10,11 @@ const TITLES: Record<PageId, { title: string; subtitle: string }> = {
     subtitle: "Multi-agent career readiness operating system."
   },
   dashboard: {
-    title: "Readiness Dashboard",
-    subtitle: "Explainable career insights and prioritized next steps."
+    title: "Analysis Overview",
+    subtitle: "Your score, matched jobs, and prioritized next steps."
   },
   upload: {
-    title: "Upload & Analyze",
+    title: "Upload & Analyse",
     subtitle: "Verify your profile, then run the multi-agent pipeline."
   },
   readiness: {
@@ -53,31 +53,29 @@ type TopBarProps = {
 };
 
 export function TopBar({ page, status }: TopBarProps) {
-  const { clearWorkspace, busy, authUser, candidateId } = useAppState();
+  const { busy, authUser, uploadStep } = useAppState();
   const meta = TITLES[page];
+  const pillLabel = busy
+    ? page === "upload" && uploadStep === "intake"
+      ? "Extracting profile…"
+      : "Agents running…"
+    : status;
+
   return (
     <header className={styles.topbar}>
-      <div>
+      <div className={styles.titleBlock}>
         <h1>{meta.title}</h1>
         <p className={styles.subtitle}>{meta.subtitle}</p>
       </div>
       <div className={styles.right}>
-        <StatusPill label={status} />
-        {busy && <span className={styles.busyTag}>Agents running</span>}
-        <GoogleSignIn compact />
-        {!authUser && (
-          <span className={styles.guest}>
-            {candidateId ? `ID ${candidateId.slice(0, 8)}` : "Guest"}
-          </span>
-        )}
-        <button
-          type="button"
-          className={styles.reset}
-          onClick={clearWorkspace}
-          title="Clear local session and start fresh"
-        >
-          Start fresh
-        </button>
+        {(busy ||
+          (status &&
+            !status.startsWith("Signed in") &&
+            !status.startsWith("Welcome back") &&
+            !status.startsWith("Session restored") &&
+            !status.startsWith("Choose a resume") &&
+            status !== "Ready to start")) && <StatusPill label={pillLabel} />}
+        {authUser ? <UserAuthChip compact /> : null}
       </div>
     </header>
   );

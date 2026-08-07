@@ -1,134 +1,113 @@
-import { useEffect, useRef } from "react";
-import { signInWithGoogle } from "@/api/client";
-import { humanizeError } from "@/lib/errors";
+import { useEffect, useId, useRef, useState } from "react";
 import { useAppState } from "@/state/AppState";
 import styles from "./GoogleSignIn.module.scss";
 
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: {
-            client_id: string;
-            callback: (response: { credential: string }) => void;
-            auto_select?: boolean;
-          }) => void;
-          renderButton: (
-            parent: HTMLElement,
-            options: {
-              theme?: string;
-              size?: string;
-              text?: string;
-              shape?: string;
-              width?: number;
-            }
-          ) => void;
-        };
-      };
-    };
-  }
-}
-
-const CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined)?.trim() || "";
-
-type GoogleSignInProps = {
+type UserAuthChipProps = {
   compact?: boolean;
+  onSignInClick?: () => void;
 };
 
-export function GoogleSignIn({ compact = false }: GoogleSignInProps) {
-  const { completeSignIn, authUser, logout, setStatus } = useAppState();
-  const buttonRef = useRef<HTMLDivElement | null>(null);
+/** Account menu when signed in; optional Sign in button when not. */
+export function UserAuthChip({ compact = false, onSignInClick }: UserAuthChipProps) {
+  const { authUser, logout, clearWorkspace } = useAppState();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const menuId = useId();
 
   useEffect(() => {
-    if (authUser || !CLIENT_ID || !buttonRef.current) return;
-
-    let cancelled = false;
-
-    const mount = () => {
-      if (cancelled || !window.google || !buttonRef.current) return;
-      buttonRef.current.innerHTML = "";
-      window.google.accounts.id.initialize({
-        client_id: CLIENT_ID,
-        callback: async (response) => {
-          try {
-            setStatus("Signing in with Google...");
-            const data = await signInWithGoogle(response.credential);
-            completeSignIn(data.access_token, data.user);
-          } catch (error) {
-            setStatus(humanizeError(error));
-          }
-        }
-      });
-      window.google.accounts.id.renderButton(buttonRef.current, {
-        theme: "outline",
-        size: compact ? "medium" : "large",
-        text: "signin_with",
-        shape: "pill",
-        width: compact ? 180 : 240
-      });
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
     };
-
-    if (window.google?.accounts?.id) {
-      mount();
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const existing = document.querySelector<HTMLScriptElement>('script[data-google-gis="1"]');
-    if (existing) {
-      existing.addEventListener("load", mount);
-      return () => {
-        cancelled = true;
-        existing.removeEventListener("load", mount);
-      };
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.dataset.googleGis = "1";
-    script.addEventListener("load", mount);
-    document.head.appendChild(script);
-
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    window.addEventListener("keydown", onKey);
     return () => {
-      cancelled = true;
-      script.removeEventListener("load", mount);
+      document.removeEventListener("mousedown", onDoc);
+      window.removeEventListener("keydown", onKey);
     };
-  }, [authUser, compact, completeSignIn, setStatus]);
+  }, [open]);
 
-  if (authUser) {
+  if (!authUser) {
+    if (!onSignInClick) return null;
     return (
-      <div className={styles.signedIn}>
+      <button type="button" className={styles.signInBtn} onClick={onSignInClick}>
+        Sign in
+      </button>
+    );
+  }
+
+  const initial = (authUser.name || authUser.email || "U").slice(0, 1).toUpperCase();
+  const displayName = authUser.name || authUser.email.split("@")[0];
+
+  return (
+    <div className={styles.menuRoot} ref={rootRef}>
+      <button
+        type="button"
+        className={styles.menuTrigger}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={menuId}
+        onClick={() => setOpen((v) => !v)}
+        title={displayName}
+      >
         {authUser.picture_url ? (
           <img className={styles.avatar} src={authUser.picture_url} alt="" />
         ) : (
-          <span className={styles.avatarFallback}>
-            {(authUser.name || authUser.email || "U").slice(0, 1).toUpperCase()}
-          </span>
+          <span className={styles.avatarFallback}>{initial}</span>
         )}
-        {!compact && (
-          <div className={styles.meta}>
-            <p className={styles.name}>{authUser.name || "Signed in"}</p>
+        {!compact && <span className={styles.triggerName}>{displayName}</span>}
+        <span className={`${styles.chevron} ${open ? styles.chevronOpen : ""}`} aria-hidden>
+          <svg viewBox="0 0 12 12" width="12" height="12">
+            <path
+              d="M2.2 4.2 6 8l3.8-3.8"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      </button>
+
+      {open && (
+        <div className={styles.menu} id={menuId} role="menu">
+          <div className={styles.menuHeader}>
+            <p className={styles.name}>{displayName}</p>
             <p className={styles.email}>{authUser.email}</p>
           </div>
-        )}
-        <button type="button" className={styles.logout} onClick={logout}>
-          Sign out
-        </button>
-      </div>
-    );
-  }
+          <button
+            type="button"
+            className={styles.menuItem}
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              clearWorkspace();
+            }}
+          >
+            Start fresh
+          </button>
+          <button
+            type="button"
+            className={`${styles.menuItem} ${styles.menuItemDanger}`}
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              logout();
+            }}
+          >
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
-  if (!CLIENT_ID) {
-    return (
-      <p className={styles.hint} title="Set VITE_GOOGLE_CLIENT_ID in frontend/.env">
-        Google Sign-In not configured
-      </p>
-    );
-  }
-
-  return <div ref={buttonRef} className={styles.buttonHost} />;
+/** @deprecated Use UserAuthChip */
+export function GoogleSignIn(props: UserAuthChipProps) {
+  return <UserAuthChip {...props} />;
 }

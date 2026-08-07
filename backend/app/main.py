@@ -3,6 +3,10 @@ from uuid import uuid4
 from contextlib import asynccontextmanager
 import os
 
+from app.ssl_fix import configure_ssl
+
+configure_ssl()
+
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
@@ -28,6 +32,7 @@ from app.schemas import (
     CandidateSummary,
     CareerAnalyticsResponse,
     CareerReadinessReport,
+    EmailAuthRequest,
     GoogleAuthRequest,
     MentorChatRequest,
     MentorChatResponse,
@@ -39,14 +44,20 @@ from app.services.analytics import candidate_career_analytics, workspace_insight
 from app.services.auth import (
     AuthUser,
     assert_candidate_access,
+    authenticate_email_user,
     create_access_token,
+    register_email_user,
     require_user,
     upsert_google_user,
     verify_google_id_token,
 )
 from app.services.dispatcher import enqueue_analysis_job
 from app.services.mentor import mentor_reply
-from app.services.resume_parser import parse_resume, read_resume_text
+from app.services.resume_parser import (
+    assess_resume_document,
+    parse_resume,
+    read_resume_text,
+)
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
@@ -84,6 +95,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
 
 
@@ -135,10 +147,51 @@ def auth_google(payload: GoogleAuthRequest) -> AuthTokenResponse:
         )
 
 
+@app.post("/auth/signup", response_model=AuthTokenResponse)
+def auth_signup(payload: EmailAuthRequest) -> AuthTokenResponse:
+    with get_session() as session:
+        user = register_email_user(
+            session,
+            email=payload.email,
+            password=payload.password,
+            name=payload.name,
+        )
+        token = create_access_token(user.id, user.email)
+        return AuthTokenResponse(
+            access_token=token,
+            user=AuthUserResponse(
+                id=user.id,
+                email=user.email,
+                name=user.name,
+                picture_url=user.picture_url or "",
+            ),
+        )
+
+
+@app.post("/auth/login", response_model=AuthTokenResponse)
+def auth_login(payload: EmailAuthRequest) -> AuthTokenResponse:
+    with get_session() as session:
+        user = authenticate_email_user(
+            session,
+            email=payload.email,
+            password=payload.password,
+        )
+        token = create_access_token(user.id, user.email)
+        return AuthTokenResponse(
+            access_token=token,
+            user=AuthUserResponse(
+                id=user.id,
+                email=user.email,
+                name=user.name,
+                picture_url=user.picture_url or "",
+            ),
+        )
+
+
 @app.get("/auth/me", response_model=AuthUserResponse)
 def auth_me(user: AuthUser | None = Depends(require_user)) -> AuthUserResponse:
     if not user:
-        raise HTTPException(status_code=401, detail="Sign in with Google to continue.")
+        raise HTTPException(status_code=401, detail="Sign in to continue.")
     return AuthUserResponse(
         id=user.id,
         email=user.email,
@@ -150,7 +203,7 @@ def auth_me(user: AuthUser | None = Depends(require_user)) -> AuthUserResponse:
 @app.get("/me/candidates", response_model=list[CandidateSummary])
 def my_candidates(user: AuthUser | None = Depends(require_user)) -> list[CandidateSummary]:
     if not user:
-        raise HTTPException(status_code=401, detail="Sign in with Google to continue.")
+        raise HTTPException(status_code=401, detail="Sign in to continue.")
     with get_session() as session:
         rows = list_profiles_for_user(session, user.id)
         return [
@@ -167,7 +220,7 @@ def my_candidates(user: AuthUser | None = Depends(require_user)) -> list[Candida
 @app.get("/me/reports", response_model=list[ReportSummary])
 def my_reports(user: AuthUser | None = Depends(require_user)) -> list[ReportSummary]:
     if not user:
-        raise HTTPException(status_code=401, detail="Sign in with Google to continue.")
+        raise HTTPException(status_code=401, detail="Sign in to continue.")
     with get_session() as session:
         profiles = list_profiles_for_user(session, user.id)
         summaries: list[ReportSummary] = []
@@ -191,9 +244,15 @@ async def upload_resume(
     content = await file.read()
     target.write_bytes(content)
     raw_text = read_resume_text(target)
+    filename = file.filename or "resume"
+    is_resume, reason = assess_resume_document(raw_text, filename)
+    if not is_resume:
+        target.unlink(missing_ok=True)
+        raise HTTPException(status_code=422, detail=reason)
+
     profile = parse_resume(
         candidate_id,
-        file.filename or "resume",
+        filename,
         raw_text,
         github_url=github_url,
         linkedin_url=linkedin_url,
@@ -201,14 +260,14 @@ async def upload_resume(
     with get_session() as session:
         save_profile(
             session,
-            file.filename or "resume",
+            filename,
             profile,
             user_id=user.id if user else None,
         )
 
     return ResumeUploadResponse(
         candidate_id=candidate_id,
-        filename=file.filename or "resume",
+        filename=filename,
         message="Resume uploaded and parsed with structured profile extraction.",
         profile=profile,
     )
@@ -300,20 +359,33 @@ def export_report_pdf(
     report_id: str,
     user: AuthUser | None = Depends(require_user),
 ):
+    from urllib.parse import quote
+
+    from fastapi.responses import Response
+
+    from app.models import CandidateProfileModel
+    from app.services.report_export import build_pdf_filename, render_report_pdf
+
     with get_session() as session:
         report = get_report(session, report_id)
         if not report:
             raise HTTPException(status_code=404, detail="Report not found.")
         assert_candidate_access(session, report.candidate_id, user)
-    from app.services.report_export import render_report_pdf
+        profile_row = session.get(CandidateProfileModel, report.candidate_id)
+        resume_filename = profile_row.filename if profile_row else None
 
-    pdf_bytes = render_report_pdf(report)
-    from fastapi.responses import Response
+    pdf_bytes = render_report_pdf(report, resume_filename=resume_filename)
+    filename = build_pdf_filename(report, resume_filename)
+    # ASCII fallback + RFC 5987 for browsers that support unicode filenames
+    ascii_name = filename.encode("ascii", "ignore").decode("ascii") or "CareerPilot-Report.pdf"
+    disposition = (
+        f'attachment; filename="{ascii_name}"; filename*=UTF-8\'\'{quote(filename)}'
+    )
 
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="careerpilot-{report_id[:8]}.pdf"'},
+        headers={"Content-Disposition": disposition},
     )
 
 

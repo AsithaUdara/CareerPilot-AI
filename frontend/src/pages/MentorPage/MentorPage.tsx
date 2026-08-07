@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/atoms/Button";
-import { Panel } from "@/atoms/Panel";
-import { Text } from "@/atoms/Text";
 import { chatWithMentor } from "@/api/client";
-import { EmptyState } from "@/molecules/EmptyState";
 import { useAppState } from "@/state/AppState";
 import type { MentorChatMessage } from "@/types";
 import styles from "./MentorPage.module.scss";
 
+const DEFAULT_SUGGESTIONS = [
+  "Walk me through Day 1 of my hiring sprint.",
+  "What should I learn first from my skill gaps?",
+  "Give me 3 interview drills for my role."
+];
+
 export function MentorPage() {
-  const { candidateId, report, setPage, setStatus } = useAppState();
+  const { candidateId, report, setStatus } = useAppState();
   const [messages, setMessages] = useState<MentorChatMessage[]>([
     {
       role: "assistant",
@@ -18,11 +21,7 @@ export function MentorPage() {
     }
   ]);
   const [draft, setDraft] = useState("");
-  const [suggestions, setSuggestions] = useState([
-    "Walk me through Day 1 of my hiring sprint.",
-    "What GitHub project should I ship this week?",
-    "Give me 3 interview drills for my role."
-  ]);
+  const [suggestions, setSuggestions] = useState(DEFAULT_SUGGESTIONS);
   const [busy, setBusy] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
 
@@ -30,17 +29,7 @@ export function MentorPage() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, busy]);
 
-  if (!candidateId) {
-    return (
-      <EmptyState
-        icon="💬"
-        title="Mentor needs a candidate"
-        description="Upload a resume first so mentoring can use your profile and readiness report."
-        actionLabel="Upload Resume"
-        onAction={() => setPage("upload")}
-      />
-    );
-  }
+  if (!report || !candidateId) return null;
 
   const send = async (text: string) => {
     const message = text.trim();
@@ -51,14 +40,9 @@ export function MentorPage() {
     setBusy(true);
     setStatus("Mentor is thinking...");
     try {
-      const data = await chatWithMentor(
-        candidateId,
-        message,
-        history,
-        report?.report_id
-      );
+      const data = await chatWithMentor(candidateId, message, history, report.report_id);
       setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
-      if (data.suggestions?.length) setSuggestions(data.suggestions);
+      if (data.suggestions?.length) setSuggestions(data.suggestions.slice(0, 4));
       setStatus("Mentor replied.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Mentor chat failed");
@@ -66,7 +50,8 @@ export function MentorPage() {
         ...prev,
         {
           role: "assistant",
-          content: "I couldn't reach the mentoring service. Check that Gemini is configured and try again."
+          content:
+            "I couldn't reach the mentoring service. Check that Gemini is configured and try again."
         }
       ]);
     } finally {
@@ -80,14 +65,33 @@ export function MentorPage() {
   };
 
   return (
-    <div className={styles.grid}>
-      <Panel span={8} className={styles.chatPanel}>
-        <span className={styles.kicker}>AI Mentoring</span>
-        <h2>Career mentor chat</h2>
-        <Text muted tiny>
-          Grounded in your latest report
-          {report ? ` · ${report.target_role} · score ${report.readiness_score ?? "n/a"}` : " · run analysis for richer context"}.
-        </Text>
+    <div className={styles.page}>
+      <section className={styles.chatCard}>
+        <header className={styles.chatHead}>
+          <div>
+            <p className={styles.kicker}>AI Mentor</p>
+            <h2 className={styles.title}>Ask your mentor</h2>
+            <p className={styles.meta}>
+              Coaching grounded in your readiness report — ask about gaps, sprint days, or interview
+              prep.
+            </p>
+          </div>
+        </header>
+
+        <div className={styles.prompts} aria-label="Suggested questions">
+          {suggestions.map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={styles.prompt}
+              onClick={() => void send(item)}
+              disabled={busy}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+
         <div className={styles.thread}>
           {messages.map((msg, index) => (
             <div
@@ -101,37 +105,21 @@ export function MentorPage() {
           {busy && <div className={styles.typing}>Mentor is typing…</div>}
           <div ref={endRef} />
         </div>
+
         <form className={styles.composer} onSubmit={onSubmit}>
           <input
             className={styles.input}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Ask about your next hiring step..."
+            placeholder="Ask about your next hiring step…"
             disabled={busy}
+            aria-label="Message to mentor"
           />
           <Button variant="primary" type="submit" disabled={busy || !draft.trim()}>
             Send
           </Button>
         </form>
-      </Panel>
-
-      <Panel span={4} delay={1}>
-        <span className={styles.kicker}>Quick prompts</span>
-        <h2>Suggested asks</h2>
-        <div className={styles.suggestions}>
-          {suggestions.map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={styles.suggestion}
-              onClick={() => void send(item)}
-              disabled={busy}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-      </Panel>
+      </section>
     </div>
   );
 }

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import os
 import re
 from typing import Any
 from uuid import uuid4
@@ -11,6 +13,13 @@ from app.config import get_settings
 from app.repositories.knowledge_repository import query_jobs_for_role
 from app.schemas import MatchedJob, SkillExtractionResult
 from app.services.llm import invoke_structured
+
+logger = logging.getLogger(__name__)
+
+
+def _ssl_verify_enabled() -> bool:
+    verify = (os.getenv("SSL_VERIFY") or "1").strip().lower()
+    return verify not in {"0", "false", "no", "off"}
 
 
 def _normalize_skills_from_text(text: str) -> list[str]:
@@ -132,11 +141,12 @@ def _adzuna_search(target_role: str, skills: list[str] | None = None) -> list[Ma
     }
 
     try:
-        with httpx.Client(timeout=20.0) as client:
+        with httpx.Client(timeout=20.0, verify=_ssl_verify_enabled()) as client:
             response = client.get(url, params=params)
             response.raise_for_status()
             payload: dict[str, Any] = response.json()
-    except Exception:
+    except Exception as exc:
+        logger.warning("Adzuna live search failed (%s); falling back to curated jobs.", exc)
         return []
 
     results = payload.get("results") or []

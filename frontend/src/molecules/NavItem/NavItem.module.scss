@@ -7,6 +7,7 @@
   border: 0;
   background: transparent;
   color: #334155;
+  text-decoration: none;
   border-radius: 14px;
   padding: 11px 12px;
   cursor: pointer;
@@ -58,4 +59,31 @@
   background: rgba(31, 122, 239, 0.08);
   opacity: 0.9;
   transition: background 200ms ease, color 200ms ease, box-shadow 200ms ease;
+  flex: none;
+}
+
+.label {
+  text-align: left;
+}
+
+.collapsed {
+  justify-content: center;
+  padding: 10px;
+  gap: 0;
+
+  &:hover {
+    transform: none;
+  }
+
+  &::before {
+    display: none;
+  }
+}
+
+.locked {
+  opacity: 0.48;
+
+  &:hover {
+    opacity: 0.72;
+  }
 }

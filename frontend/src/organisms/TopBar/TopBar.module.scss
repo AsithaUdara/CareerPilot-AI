@@ -1,36 +1,37 @@
 @use "@/styles/tokens" as *;
 
 .topbar {
-  @include glass;
   position: relative;
-  overflow: hidden;
+  z-index: 1;
   display: flex;
   justify-content: space-between;
   gap: 16px;
   align-items: center;
-  padding: 18px 22px;
-  z-index: 1;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 40%;
-    height: 3px;
-    background: linear-gradient(90deg, $accent, $violet, transparent);
-    opacity: 0.7;
-  }
+  padding: 16px 20px;
+  border-radius: $radius;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 28px rgba(27, 36, 51, 0.08);
+  backdrop-filter: blur(16px);
 
   h1 {
-    font-size: 1.45rem;
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: $ink;
+    letter-spacing: -0.02em;
   }
 }
 
+.titleBlock {
+  min-width: 0;
+}
+
 .subtitle {
-  color: $muted;
-  margin: 0;
-  font-size: 0.92rem;
+  color: #4f5d73;
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .right {
@@ -39,47 +40,7 @@
   align-items: center;
   flex-wrap: wrap;
   justify-content: flex-end;
-}
-
-.busyTag {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #1559c5;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(31, 122, 239, 0.12);
-  animation: pulse 1.4s ease infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.55;
-  }
-}
-
-.guest {
-  font-size: 0.75rem;
-  color: $muted;
-  font-family: $font-body;
-}
-
-.reset {
-  border: 1px solid rgba(27, 36, 51, 0.12);
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 999px;
-  padding: 6px 12px;
-  font: inherit;
-  font-size: 0.78rem;
-  font-weight: 600;
-  cursor: pointer;
-
-  &:hover {
-    border-color: rgba(31, 122, 239, 0.35);
-  }
+  flex: none;
 }
 
 @media (max-width: 720px) {

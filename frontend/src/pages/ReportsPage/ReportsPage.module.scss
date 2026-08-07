@@ -1,190 +1,228 @@
 @use "@/styles/tokens" as *;
 
-.stack {
-  display: grid;
-  gap: 16px;
-}
-
-.head {
+.page {
   display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: flex-start;
-  margin-bottom: 12px;
-
-  h2 {
-    margin-bottom: 0;
-  }
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+  min-width: 0;
 }
 
 .kicker {
   @include kicker;
-  display: block;
-  margin-bottom: 4px;
+  margin: 0 0 4px;
 }
 
-.table {
-  display: grid;
+.card {
+  @include glass;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  padding: 22px 24px;
+  border-radius: 20px;
+}
+
+.sectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 1.15rem;
+  color: $ink;
+}
+
+.lead {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #5a6578;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.reportList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reportItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(248, 251, 255, 0.95);
+  border: 1px solid rgba(27, 36, 51, 0.08);
+}
+
+.reportActive {
+  border-color: rgba(31, 122, 239, 0.35);
+  background: rgba(31, 122, 239, 0.06);
+}
+
+.reportMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+
+  strong {
+    font-size: 0.95rem;
+    color: $ink;
+  }
+
+  span {
+    font-size: 0.8rem;
+    color: #5a6578;
+  }
+}
+
+.reportActions {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.quickActions {
-  margin: 0 0 14px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-  background: rgba(255, 255, 255, 0.56);
-  border: 1px solid rgba(255, 255, 255, 0.65);
-}
+/* —— Comparison —— */
 
-.row {
-  display: grid;
-  grid-template-columns: 1.1fr 1.2fr 1.2fr auto auto;
-  gap: 10px;
-  align-items: center;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.52);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
-
-  &:not(.headRow):hover {
-    transform: translateY(-2px);
-    box-shadow: 0 14px 32px rgba(31, 74, 145, 0.12);
-    border-color: rgba(31, 122, 239, 0.24);
-  }
-}
-
-.headRow {
-  background: transparent;
-  border: 0;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  color: $muted;
-  font-size: 0.74rem;
+.delta {
+  flex: none;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
 
-.mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.85rem;
-  color: #1559c5;
-  background: rgba(31, 122, 239, 0.08);
-  padding: 4px 10px;
-  border-radius: 8px;
-  width: fit-content;
+.deltaUp {
+  color: #0c8f87;
+  background: rgba(18, 163, 154, 0.12);
 }
 
-.jobStack {
-  display: grid;
-  gap: 10px;
-}
-
-.jobRow {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  transition: transform 200ms ease, box-shadow 200ms ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 14px 32px rgba(31, 74, 145, 0.12);
-  }
-
-  a {
-    color: $accent;
-    font-weight: 600;
-    text-decoration: none;
-    white-space: nowrap;
-
-    &:hover {
-      text-decoration: underline;
-    }
-  }
+.deltaDown {
+  color: $rose;
+  background: rgba(225, 29, 72, 0.1);
 }
 
 .compareGrid {
   display: grid;
-  grid-template-columns: 0.8fr 1.2fr 1.2fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
-}
 
-.metricCard {
-  padding: 14px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.54);
-  border: 1px solid rgba(255, 255, 255, 0.66);
-}
-
-.metricLabel {
-  margin: 0 0 6px;
-  color: $muted;
-  font-size: 0.76rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.metricValue {
-  margin: 0;
-  font-family: $font-display;
-  font-size: 1.55rem;
-  font-weight: 700;
-}
-
-.good {
-  border-left: 3px solid rgba(18, 163, 154, 0.75);
-}
-
-.warn {
-  border-left: 3px solid rgba(217, 119, 6, 0.75);
-}
-
-.pillRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.gapPill {
-  padding: 5px 10px;
-  border-radius: 999px;
-  font-size: 0.76rem;
-  font-weight: 600;
-}
-
-.closed {
-  color: #0f766e;
-  background: rgba(18, 163, 154, 0.14);
-}
-
-.new {
-  color: #b45309;
-  background: rgba(217, 119, 6, 0.14);
-}
-
-.emptyPill {
-  color: $muted;
-  font-size: 0.8rem;
-}
-
-@media (max-width: 720px) {
-  .row,
-  .headRow {
-    grid-template-columns: 1fr;
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .compareGrid {
+  @media (max-width: 520px) {
     grid-template-columns: 1fr;
+  }
+}
+
+.compareCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(27, 36, 51, 0.08);
+  min-width: 0;
+}
+
+.fieldLabel {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5a6578;
+}
+
+.compareValue {
+  font-family: $font-display;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: $ink;
+  line-height: 1.1;
+}
+
+.compareText {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: #3d4a5f;
+}
+
+/* —— Jobs —— */
+
+.sourcePill {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 650;
+  color: #1559c5;
+  background: rgba(31, 122, 239, 0.1);
+}
+
+.jobList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.jobItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(27, 36, 51, 0.08);
+
+  strong {
+    display: block;
+    font-size: 0.92rem;
+    color: $ink;
+  }
+
+  span {
+    display: block;
+    margin-top: 3px;
+    font-size: 0.8rem;
+    color: #5a6578;
+    line-height: 1.35;
+  }
+
+  a {
+    flex: none;
+    font-size: 0.86rem;
+    font-weight: 650;
+    color: #1559c5;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 }

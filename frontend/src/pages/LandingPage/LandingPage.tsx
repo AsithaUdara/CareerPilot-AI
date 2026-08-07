@@ -6,7 +6,9 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PropsWithChildren
 } from "react";
-import { GoogleSignIn } from "@/molecules/GoogleSignIn";
+import { BrandMark } from "@/atoms/BrandMark";
+import { UserAuthChip } from "@/molecules/GoogleSignIn/GoogleSignIn";
+import { AuthModal, type AuthMode } from "@/organisms/AuthModal";
 import { useAppState } from "@/state/AppState";
 import styles from "./LandingPage.module.scss";
 
@@ -89,6 +91,8 @@ function TiltCard({ children, className = "" }: PropsWithChildren<{ className?: 
 export function LandingPage() {
   const { setPage, authUser } = useAppState();
   const heroRef = useRef<HTMLDivElement | null>(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode>("signin");
 
   const onHeroMove = useCallback((e: ReactMouseEvent<HTMLDivElement>) => {
     const node = heroRef.current;
@@ -100,7 +104,20 @@ export function LandingPage() {
     node.style.setProperty("--par-y", `${py * 24}px`);
   }, []);
 
-  const enter = () => setPage("upload");
+  const openAuth = (mode: AuthMode = "signin") => {
+    setAuthMode(mode);
+    setAuthOpen(true);
+  };
+
+  const enter = () => {
+    if (authUser) {
+      setPage("dashboard");
+      return;
+    }
+    openAuth("signin");
+  };
+
+  const afterAuth = () => setPage("dashboard");
 
   return (
     <div className={styles.landing}>
@@ -111,8 +128,7 @@ export function LandingPage() {
 
       <nav className={styles.nav}>
         <div className={styles.brand}>
-          <span className={styles.brandMark}>◆</span>
-          CareerPilot <em>AI</em>
+          <BrandMark showWordmark />
         </div>
         <div className={styles.navLinks}>
           <a href="#agents">Agents</a>
@@ -120,12 +136,21 @@ export function LandingPage() {
           <a href="#stack">Stack</a>
         </div>
         <div className={styles.navAuth}>
-          <GoogleSignIn />
+          {authUser && <UserAuthChip />}
           <button className={styles.navCta} onClick={enter}>
-            {authUser ? "Open workspace" : "Launch App"}
+            {authUser ? "Open dashboard" : "Launch App"}
           </button>
         </div>
       </nav>
+
+      <AuthModal
+        open={authOpen}
+        mode={authMode}
+        onModeChange={setAuthMode}
+        onClose={() => setAuthOpen(false)}
+        onSuccess={afterAuth}
+      />
+
 
       <header className={styles.hero} ref={heroRef} onMouseMove={onHeroMove}>
         <div className={styles.heroCopy}>
@@ -146,7 +171,7 @@ export function LandingPage() {
           </p>
           <div className={styles.heroActions}>
             <button className={styles.primaryCta} onClick={enter}>
-              Analyze my resume
+              {authUser ? "Open dashboard" : "Analyze my resume"}
               <span className={styles.ctaArrow}>→</span>
             </button>
             <a className={styles.ghostCta} href="#pipeline">

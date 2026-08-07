@@ -3,6 +3,10 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from app.ssl_fix import configure_ssl
+
+configure_ssl()
+
 from celery import Celery
 from dotenv import load_dotenv
 

@@ -1,5 +1,6 @@
 import { AppStateProvider, useAppState } from "@/state/AppState";
 import { AppShell } from "@/templates/AppShell";
+import { AnalysisGate } from "@/organisms/AnalysisGate";
 import { LandingPage } from "@/pages/LandingPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { UploadPage } from "@/pages/UploadPage";
@@ -18,17 +19,21 @@ function Shell() {
     return <LandingPage />;
   }
 
+  const analysisPages: Partial<Record<typeof page, JSX.Element>> = {
+    dashboard: <DashboardPage />,
+    readiness: <ReadinessPage />,
+    gaps: <GapsPage />,
+    plan: <PlanPage />,
+    reports: <ReportsPage />,
+    mentor: <MentorPage />,
+    analytics: <AnalyticsPage />
+  };
+
   return (
     <AppShell>
-      {page === "dashboard" && <DashboardPage />}
       {page === "upload" && <UploadPage />}
-      {page === "readiness" && <ReadinessPage />}
-      {page === "gaps" && <GapsPage />}
-      {page === "plan" && <PlanPage />}
-      {page === "reports" && <ReportsPage />}
-      {page === "mentor" && <MentorPage />}
-      {page === "analytics" && <AnalyticsPage />}
       {page === "insights" && <InsightsPage />}
+      {analysisPages[page] && <AnalysisGate>{analysisPages[page]}</AnalysisGate>}
     </AppShell>
   );
 }

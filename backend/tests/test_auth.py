@@ -9,7 +9,7 @@ from app.models import UserModel
 from app.services.auth import create_access_token
 
 
-def _make_user_token(email: str = "demo@careerpilot.test") -> tuple[str, str]:
+def _make_user_token(email: str = "owner@careerpilot.test") -> tuple[str, str]:
     user_id = str(uuid4())
     with get_session() as session:
         session.add(
@@ -23,6 +23,36 @@ def _make_user_token(email: str = "demo@careerpilot.test") -> tuple[str, str]:
         )
     token = create_access_token(user_id, email)
     return user_id, token
+
+
+def test_email_signup_and_login(client: TestClient) -> None:
+    signup = client.post(
+        "/auth/signup",
+        json={"email": "demo@careerpilot.test", "password": "secret12", "name": "Demo"},
+    )
+    assert signup.status_code == 200
+    payload = signup.json()
+    assert payload["access_token"]
+    assert payload["user"]["email"] == "demo@careerpilot.test"
+
+    again = client.post(
+        "/auth/signup",
+        json={"email": "demo@careerpilot.test", "password": "secret12", "name": "Demo"},
+    )
+    assert again.status_code == 409
+
+    login = client.post(
+        "/auth/login",
+        json={"email": "demo@careerpilot.test", "password": "secret12"},
+    )
+    assert login.status_code == 200
+    assert login.json()["user"]["name"] == "Demo"
+
+    bad = client.post(
+        "/auth/login",
+        json={"email": "demo@careerpilot.test", "password": "wrong-pass"},
+    )
+    assert bad.status_code == 401
 
 
 def test_auth_google_upsert_and_me(client: TestClient) -> None:

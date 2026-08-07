@@ -1,8 +1,9 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/atoms/Button";
 import { Panel } from "@/atoms/Panel";
 import { Select } from "@/atoms/Select";
 import { Text } from "@/atoms/Text";
-import { estimateReadiness, getProfile, uploadResume } from "@/api/client";
+import { estimateReadiness, uploadResume } from "@/api/client";
 import { IT_TARGET_ROLES, SENIORITY_LEVELS } from "@/constants/itRoles";
 import { humanizeError } from "@/lib/errors";
 import { FileDrop } from "@/molecules/FileDrop";
@@ -11,14 +12,14 @@ import { useAppState } from "@/state/AppState";
 import styles from "./UploadPage.module.scss";
 
 const PIPELINE_STAGES = [
-  { key: "queued", icon: "⏳", label: "Queued", detail: "Job dispatched to Celery worker" },
-  { key: "resume_analysis", icon: "🧠", label: "Resume Analysis", detail: "Gemini structures your profile" },
-  { key: "job_matching", icon: "🎯", label: "Job Matching", detail: "Live Adzuna + curated RAG jobs" },
-  { key: "skill_gaps", icon: "🧩", label: "Skill Gaps", detail: "Ranking blocking skills" },
-  { key: "learning_roadmap", icon: "🗺️", label: "Learning Planner", detail: "Prioritized roadmap" },
-  { key: "resume_optimization", icon: "📄", label: "Resume Optimizer", detail: "Role-targeted rewrites" },
-  { key: "interview_coach", icon: "🎤", label: "Interview Coach", detail: "Personalized prep drills" },
-  { key: "report_composition", icon: "📊", label: "Report Composition", detail: "Explainable final report" }
+  { key: "queued", label: "Queued", detail: "Job starts on the worker" },
+  { key: "resume_analysis", label: "Resume analysis", detail: "Structure your profile" },
+  { key: "job_matching", label: "Job matching", detail: "Live + curated roles" },
+  { key: "skill_gaps", label: "Skill gaps", detail: "Rank what blocks hiring" },
+  { key: "learning_roadmap", label: "Learning plan", detail: "Prioritized roadmap" },
+  { key: "resume_optimization", label: "Resume tips", detail: "Role-targeted rewrites" },
+  { key: "interview_coach", label: "Interview prep", detail: "Practice drills" },
+  { key: "report_composition", label: "Final report", detail: "Explainable readiness" }
 ];
 
 const STACK_OPTIONS = [
@@ -33,12 +34,36 @@ const STACK_OPTIONS = [
   "Mobile (React Native/Flutter)"
 ];
 
-const STEP_META = {
-  intake: { label: "1 · Intake", title: "Upload your resume" },
-  review: { label: "2 · Verify", title: "Review extracted profile" },
-  running: { label: "3 · Analyze", title: "Agents are working" },
-  done: { label: "4 · Ready", title: "Analysis complete" }
-} as const;
+const STEPS = [
+  { key: "intake", label: "Upload" },
+  { key: "review", label: "Verify" },
+  { key: "running", label: "Analyse" },
+  { key: "done", label: "Done" }
+] as const;
+
+const HOW_STEPS = [
+  { n: "1", title: "Upload", text: "Add your resume and choose a target role." },
+  { n: "2", title: "Verify", text: "Confirm the extracted skills and experience." },
+  { n: "3", title: "Analyse", text: "Six agents build your readiness report." }
+];
+
+const EXTRACT_PHASES = [
+  { label: "Uploading file", tip: "Sending your resume securely to CareerPilot." },
+  { label: "Reading document", tip: "Pulling text from PDF, DOCX, or TXT." },
+  { label: "Checking it’s a CV", tip: "Confirming this looks like a resume, not notes." },
+  { label: "Extracting profile", tip: "Finding skills, education, projects, and experience." },
+  { label: "Almost ready", tip: "Preparing the verify step — usually 10–40 seconds total." }
+];
+
+function isNotResumeError(message: string | null | undefined): boolean {
+  if (!message) return false;
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("does not look like a resume") ||
+    lower.includes("little readable text") ||
+    lower.includes("not a resume")
+  );
+}
 
 export function UploadPage() {
   const {
@@ -60,6 +85,7 @@ export function UploadPage() {
     setProfile,
     report,
     setStatus,
+    status,
     busy,
     setBusy,
     setPage,
@@ -68,11 +94,27 @@ export function UploadPage() {
     analysisJob,
     analysisError,
     setAnalysisError,
-    runAnalysis,
-    myCandidates,
-    authUser,
-    refreshMyCandidates
+    runAnalysis
   } = useAppState();
+
+  const [showMore, setShowMore] = useState(
+    () => stackEmphasis.length > 0 || Boolean(githubUrl || linkedinUrl)
+  );
+  const [extractPhase, setExtractPhase] = useState(0);
+
+  const extracting = busy && uploadStep === "intake";
+
+  useEffect(() => {
+    if (!extracting) {
+      setExtractPhase(0);
+      return;
+    }
+    setExtractPhase(0);
+    const id = window.setInterval(() => {
+      setExtractPhase((prev) => Math.min(prev + 1, EXTRACT_PHASES.length - 1));
+    }, 2800);
+    return () => window.clearInterval(id);
+  }, [extracting]);
 
   const job = analysisJob;
   const currentStageIndex = job
@@ -80,15 +122,26 @@ export function UploadPage() {
     : -1;
   const jobComplete = job?.stage === "completed" || job?.status === "completed";
   const jobFailed = job?.stage === "failed" || job?.status === "failed";
-  const isRunning = uploadStep === "running";
-  const locked = isRunning || busy;
+  const locked = uploadStep === "running" || busy;
+  const stepOrder = STEPS.map((s) => s.key);
+  const stepIndex = stepOrder.indexOf(uploadStep);
+  const notResumeError = uploadStep === "intake" && isNotResumeError(analysisError);
+  const pipelineError = Boolean(analysisError) && !notResumeError;
+
+  const onFileChange = (next: File | null) => {
+    setFile(next);
+    if (analysisError) setAnalysisError(null);
+    if (notResumeError || isNotResumeError(status)) {
+      setStatus("Ready to start");
+    }
+  };
 
   const onContinue = async () => {
     if (!file || locked) return;
     try {
       setBusy(true);
       setAnalysisError(null);
-      setStatus("Uploading resume and extracting structured profile...");
+      setStatus("Uploading resume and extracting profile...");
       const data = await uploadResume(file, {
         githubUrl: githubUrl.trim(),
         linkedinUrl: linkedinUrl.trim()
@@ -96,35 +149,15 @@ export function UploadPage() {
       setCandidateId(data.candidate_id);
       if (data.profile) setProfile(data.profile);
       setUploadStep("review");
-      setStatus("Profile extracted — verify details, then run analysis.");
-      void refreshMyCandidates();
+      setStatus("Profile ready — verify, then run analysis.");
     } catch (error) {
       const message = humanizeError(error);
       setAnalysisError(message);
-      setStatus(message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const selectSavedCv = async (id: string) => {
-    if (locked) return;
-    try {
-      setBusy(true);
-      setAnalysisError(null);
-      setStatus("Loading saved CV summary...");
-      const loaded = await getProfile(id);
-      setCandidateId(id);
-      setProfile(loaded);
-      if (loaded.github_url) setGithubUrl(loaded.github_url);
-      if (loaded.linkedin_url) setLinkedinUrl(loaded.linkedin_url);
-      setFile(null);
-      setUploadStep("review");
-      setStatus("Loaded saved CV — verify target role, then run analysis.");
-    } catch (error) {
-      const message = humanizeError(error);
-      setAnalysisError(message);
-      setStatus(message);
+      if (isNotResumeError(message)) {
+        setStatus("Choose a resume or CV to continue.");
+      } else {
+        setStatus(message);
+      }
     } finally {
       setBusy(false);
     }
@@ -140,139 +173,268 @@ export function UploadPage() {
     if (locked) return;
     setUploadStep("review");
     setAnalysisError(null);
-    setStatus("Adjust role or stack, then run analysis again.");
   };
 
   return (
-    <div className={styles.grid}>
-      <div className={styles.stepper} aria-label="Upload steps">
-        {(Object.keys(STEP_META) as Array<keyof typeof STEP_META>).map((key) => {
-          const active = uploadStep === key;
-          const order = ["intake", "review", "running", "done"] as const;
-          const done =
-            order.indexOf(uploadStep) > order.indexOf(key) ||
-            (uploadStep === "done" && key === "done");
+    <div className={styles.page}>
+      <ol className={styles.steps} aria-label="Upload steps">
+        {STEPS.map((step, index) => {
+          const allComplete = uploadStep === "done";
+          const active = uploadStep === step.key && !allComplete;
+          const done = allComplete || stepIndex > index;
           return (
-            <div
-              key={key}
-              className={`${styles.stepPill} ${active ? styles.stepPillActive : ""} ${done && !active ? styles.stepPillDone : ""}`}
+            <li
+              key={step.key}
+              className={`${styles.step} ${active ? styles.stepActive : ""} ${done ? styles.stepDone : ""}`}
             >
-              {STEP_META[key].label}
-            </div>
+              <span className={styles.stepNum}>{done ? "✓" : index + 1}</span>
+              <span className={styles.stepLabel}>{step.label}</span>
+            </li>
           );
         })}
-      </div>
+      </ol>
 
-      {analysisError && (
+      {pipelineError && (
         <div className={styles.errorBanner} role="alert">
-          <div>
-            <p className={styles.errorTitle}>Something needs attention</p>
-            <Text muted>{analysisError}</Text>
-          </div>
-          {(uploadStep === "review" || uploadStep === "intake") && candidateId && (
+          <p>{analysisError}</p>
+          {candidateId && uploadStep !== "running" && uploadStep !== "intake" && (
             <Button variant="primary" onClick={() => void runAnalysis()} disabled={locked}>
-              Retry analysis
+              Retry
             </Button>
           )}
         </div>
       )}
 
       {uploadStep === "intake" && (
-        <>
-          <Panel span={8}>
-            <span className={styles.kicker}>{STEP_META.intake.label}</span>
-            <h2>{STEP_META.intake.title}</h2>
-            <Text muted>
-              Choose a resume and target settings. Next you will review the extracted profile before
-              any agents run.
-            </Text>
-            <FileDrop fileName={file?.name} onChange={setFile} />
-            <TargetFields
-              targetRole={targetRole}
-              setTargetRole={setTargetRole}
-              seniorityLevel={seniorityLevel}
-              setSeniorityLevel={setSeniorityLevel}
-              stackEmphasis={stackEmphasis}
-              setStackEmphasis={setStackEmphasis}
-              githubUrl={githubUrl}
-              setGithubUrl={setGithubUrl}
-              linkedinUrl={linkedinUrl}
-              setLinkedinUrl={setLinkedinUrl}
-              disabled={locked}
-            />
-            <div className={styles.actions}>
-              <Button variant="primary" onClick={() => void onContinue()} disabled={!file || locked}>
-                {busy ? "Extracting profile..." : "Continue to review"}
-              </Button>
+        <div className={styles.intake}>
+          <Panel span={12} className={styles.mainCard}>
+            <div className={styles.intakeHead}>
+              <div>
+                <p className={styles.kicker}>Step 1</p>
+                <h2 className={styles.title}>
+                  {extracting ? "Extracting your profile" : "Upload your resume"}
+                </h2>
+                <Text muted>
+                  {extracting
+                    ? "This can take a little while — stay on this page while we read your CV."
+                    : "Drop a PDF, DOCX, or TXT. Next you will verify the extracted profile before agents run."}
+                </Text>
+              </div>
             </div>
-          </Panel>
-          <Panel span={4} delay={1}>
-            <span className={styles.kicker}>What happens next</span>
-            <h2>Verify, then run</h2>
-            <ol className={styles.howto}>
-              <li>We parse your resume into a structured profile.</li>
-              <li>You check skills, experience, and target role.</li>
-              <li>Only then do the six agents start working.</li>
-            </ol>
-            {authUser && myCandidates.length > 0 && (
-              <div className={styles.savedBlock}>
-                <p className={styles.metaLabel}>My CV summaries</p>
-                <ul className={styles.savedList}>
-                  {myCandidates.slice(0, 5).map((cv) => (
-                    <li key={cv.candidate_id}>
-                      <button
-                        type="button"
-                        className={styles.savedItem}
-                        onClick={() => void selectSavedCv(cv.candidate_id)}
-                        disabled={locked}
+
+            {extracting ? (
+              <div className={styles.extractPanel} aria-live="polite" aria-busy="true">
+                <div className={styles.extractHero}>
+                  <div className={styles.extractSpinner} aria-hidden />
+                  <div className={styles.extractCopy}>
+                    <p className={styles.extractLabel}>{EXTRACT_PHASES[extractPhase].label}</p>
+                    <p className={styles.extractTip}>{EXTRACT_PHASES[extractPhase].tip}</p>
+                    {file?.name && (
+                      <p className={styles.extractFile}>
+                        Working on <strong>{file.name}</strong>
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className={styles.extractTrack} aria-hidden>
+                  <div
+                    className={styles.extractFill}
+                    style={{
+                      width: `${18 + (extractPhase / (EXTRACT_PHASES.length - 1)) * 72}%`
+                    }}
+                  />
+                </div>
+
+                <ol className={styles.extractSteps}>
+                  {EXTRACT_PHASES.map((phase, index) => {
+                    const done = index < extractPhase;
+                    const active = index === extractPhase;
+                    return (
+                      <li
+                        key={phase.label}
+                        className={`${styles.extractStep} ${done ? styles.extractStepDone : ""} ${active ? styles.extractStepActive : ""}`}
                       >
-                        <strong>{cv.filename}</strong>
-                        <span>{cv.summary.slice(0, 80) || "No summary"}…</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                        <span className={styles.extractStepMark}>
+                          {done ? "✓" : active ? "●" : index + 1}
+                        </span>
+                        <span>{phase.label}</span>
+                      </li>
+                    );
+                  })}
+                </ol>
+
+                <p className={styles.extractNote}>
+                  Typical wait is about 10–40 seconds. You’ll review the result before any agents run.
+                </p>
+              </div>
+            ) : (
+              <div className={styles.intakePrimary}>
+                <FileDrop fileName={file?.name} onChange={onFileChange} />
+
+                <div className={styles.formRow}>
+                  <Select
+                    label="Target role"
+                    value={targetRole}
+                    onChange={(e) => setTargetRole(e.target.value)}
+                    options={[...IT_TARGET_ROLES]}
+                    disabled={locked}
+                  />
+                  <Select
+                    label="Seniority"
+                    value={seniorityLevel}
+                    onChange={(e) => setSeniorityLevel(e.target.value)}
+                    options={[...SENIORITY_LEVELS]}
+                    disabled={locked}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  className={styles.moreToggle}
+                  onClick={() => setShowMore((v) => !v)}
+                >
+                  <span className={styles.moreIcon}>{showMore ? "−" : "+"}</span>
+                  <span>
+                    {showMore ? "Hide optional details" : "Add stack, GitHub, or LinkedIn"}
+                    {!showMore && <em> · optional</em>}
+                  </span>
+                </button>
+
+                {showMore && (
+                  <div className={styles.moreBlock}>
+                    <div className={styles.stackBlock}>
+                      <span className={styles.fieldLabel}>Stack emphasis</span>
+                      <div className={styles.stackChips}>
+                        {STACK_OPTIONS.map((option) => {
+                          const active = stackEmphasis.includes(option);
+                          return (
+                            <button
+                              key={option}
+                              type="button"
+                              disabled={locked}
+                              className={`${styles.stackChip} ${active ? styles.stackChipActive : ""}`}
+                              onClick={() =>
+                                setStackEmphasis(
+                                  active
+                                    ? stackEmphasis.filter((item) => item !== option)
+                                    : [...stackEmphasis, option].slice(0, 5)
+                                )
+                              }
+                            >
+                              {option}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className={styles.formRow}>
+                      <label className={styles.field}>
+                        <span className={styles.fieldLabel}>GitHub</span>
+                        <input
+                          className={styles.input}
+                          type="url"
+                          placeholder="https://github.com/…"
+                          value={githubUrl}
+                          disabled={locked}
+                          onChange={(e) => setGithubUrl(e.target.value)}
+                        />
+                      </label>
+                      <label className={styles.field}>
+                        <span className={styles.fieldLabel}>LinkedIn</span>
+                        <input
+                          className={styles.input}
+                          type="url"
+                          placeholder="https://linkedin.com/in/…"
+                          value={linkedinUrl}
+                          disabled={locked}
+                          onChange={(e) => setLinkedinUrl(e.target.value)}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                <div className={styles.actions}>
+                  {notResumeError ? (
+                    <div className={styles.inlineErrorRow}>
+                      <p className={styles.inlineError} role="alert">
+                        {analysisError}
+                      </p>
+                      <Button
+                        variant="primary"
+                        onClick={() => {
+                          setAnalysisError(null);
+                          setFile(null);
+                          setStatus("Ready to start");
+                          window.setTimeout(() => {
+                            document.getElementById("resume-file")?.click();
+                          }, 0);
+                        }}
+                      >
+                        Reupload
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="primary"
+                      onClick={() => void onContinue()}
+                      disabled={!file || locked}
+                    >
+                      Continue to verify
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
-            {!authUser && (
-              <Text muted>
-                Sign in with Google (top bar) to save CV summaries across sessions.
-              </Text>
-            )}
+
+            <div className={styles.infoPair}>
+              <div className={styles.infoCard}>
+                <p className={styles.kicker}>How it works</p>
+                <h3 className={styles.sideTitle}>Three clear steps</h3>
+                <ol className={styles.howList}>
+                  {HOW_STEPS.map((item) => (
+                    <li key={item.n}>
+                      <span className={styles.howNum}>{item.n}</span>
+                      <div>
+                        <strong>{item.title}</strong>
+                        <p>{item.text}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+              <div className={styles.infoCard}>
+                <p className={styles.kicker}>Tips</p>
+                <h3 className={styles.sideTitle}>Get a better result</h3>
+                <ul className={styles.tips}>
+                  <li>Use your latest resume for better skill extraction.</li>
+                  <li>Pick the role you are applying for now.</li>
+                  <li>You can re-analyze later with a different role.</li>
+                  <li>Optional stack tags help agents weight matching skills.</li>
+                </ul>
+              </div>
+            </div>
           </Panel>
-        </>
+        </div>
       )}
 
       {uploadStep === "review" && profile && (
-        <>
-          <Panel span={8}>
-            <span className={styles.kicker}>{STEP_META.review.label}</span>
-            <h2>{STEP_META.review.title}</h2>
-            <Text muted>
-              Confirm this looks right. You can still change role, seniority, and stack before
-              analysis.
-            </Text>
+        <div className={styles.review}>
+          <Panel span={12} className={styles.mainCard}>
+            <div className={styles.reviewHead}>
+              <p className={styles.kicker}>Step 2</p>
+              <h2 className={styles.title}>Verify extracted profile</h2>
+              <Text muted>Confirm this looks right, then start analysis.</Text>
+            </div>
+
             {report && (
-              <div className={styles.priorNote}>
-                Prior readiness score: <strong>{estimateReadiness(report)}</strong> for{" "}
-                {report.target_role}. Re-running keeps memory of prior gaps.
-              </div>
+              <p className={styles.priorNote}>
+                Prior score <strong>{estimateReadiness(report)}</strong> for {report.target_role}.
+              </p>
             )}
-            <TargetFields
-              targetRole={targetRole}
-              setTargetRole={setTargetRole}
-              seniorityLevel={seniorityLevel}
-              setSeniorityLevel={setSeniorityLevel}
-              stackEmphasis={stackEmphasis}
-              setStackEmphasis={setStackEmphasis}
-              githubUrl={githubUrl}
-              setGithubUrl={setGithubUrl}
-              linkedinUrl={linkedinUrl}
-              setLinkedinUrl={setLinkedinUrl}
-              disabled={locked}
-            />
+
             <div className={styles.preview}>
-              <span className={styles.kicker}>Extracted profile</span>
               <div className={styles.previewBlock}>
                 <p className={styles.previewLabel}>Summary</p>
                 <Text>{profile.summary || "No summary extracted."}</Text>
@@ -281,261 +443,196 @@ export function UploadPage() {
                 <p className={styles.previewLabel}>Skills</p>
                 <TagList items={profile.skills} />
               </div>
-              {profile.education.length > 0 && (
-                <div className={styles.previewBlock}>
-                  <p className={styles.previewLabel}>Education</p>
-                  <ul className={styles.bullets}>
-                    {profile.education.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {profile.experience.length > 0 && (
-                <div className={styles.previewBlock}>
-                  <p className={styles.previewLabel}>Experience</p>
-                  <ul className={styles.bullets}>
-                    {profile.experience.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {profile.projects.length > 0 && (
-                <div className={styles.previewBlock}>
-                  <p className={styles.previewLabel}>Projects</p>
-                  <ul className={styles.bullets}>
-                    {profile.projects.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-            <div className={styles.actions}>
-              <Button variant="secondary" onClick={backToIntake} disabled={locked}>
-                Upload different resume
-              </Button>
-              <Button variant="primary" onClick={() => void runAnalysis()} disabled={!candidateId || locked}>
-                {report ? "Analyze again" : "Run multi-agent analysis"}
-              </Button>
-            </div>
-          </Panel>
-          <Panel span={4} delay={1}>
-            <span className={styles.kicker}>Ready to analyze</span>
-            <h2>What the agents will do</h2>
-            <ul className={styles.pipeline}>
-              {PIPELINE_STAGES.map((stage) => (
-                <li key={stage.key} className={styles.stage}>
-                  <span className={styles.stageIcon}>{stage.icon}</span>
-                  <div>
-                    <p className={styles.stageName}>{stage.label}</p>
-                    <p className={styles.stageDetail}>{stage.detail}</p>
+              <div className={styles.previewGrid}>
+                {profile.experience.length > 0 && (
+                  <div className={styles.previewBlock}>
+                    <p className={styles.previewLabel}>Experience</p>
+                    <ul className={styles.bullets}>
+                      {profile.experience.slice(0, 4).map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
                   </div>
-                </li>
-              ))}
-            </ul>
-            <div className={styles.meta}>
-              <p className={styles.metaLabel}>Candidate ID</p>
-              <Text mono>{candidateId ? candidateId.slice(0, 13) : "—"}</Text>
-            </div>
-          </Panel>
-        </>
-      )}
-
-      {uploadStep === "running" && (
-        <Panel span={12}>
-          <span className={styles.kicker}>{STEP_META.running.label}</span>
-          <h2>{STEP_META.running.title}</h2>
-          <Text muted>
-            Stay on this page or browse other sections — progress is tracked globally. Do not close
-            the browser if you want live updates; a refresh will reconnect to the job.
-          </Text>
-          {job && (
-            <div className={styles.progressWrap}>
-              <div className={styles.progressTrack}>
-                <div className={styles.progressFill} style={{ width: `${job.progress}%` }} />
+                )}
+                {profile.education.length > 0 && (
+                  <div className={styles.previewBlock}>
+                    <p className={styles.previewLabel}>Education</p>
+                    <ul className={styles.bullets}>
+                      {profile.education.slice(0, 3).map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
-              <span className={styles.progressPct}>{job.progress}%</span>
             </div>
-          )}
-          <ul className={`${styles.pipeline} ${styles.pipelineWide}`}>
-            {PIPELINE_STAGES.map((stage, index) => {
-              const done = jobComplete || (currentStageIndex > -1 && index < currentStageIndex);
-              const active = !jobComplete && !jobFailed && index === currentStageIndex;
-              return (
-                <li
-                  key={stage.key}
-                  className={`${styles.stage} ${done ? styles.stageDone : ""} ${active ? styles.stageActive : ""} ${jobFailed && index === currentStageIndex ? styles.stageFailed : ""}`}
+
+            <div className={styles.analyzeBlock}>
+              <p className={styles.kicker}>Ready to analyse</p>
+              <h3 className={styles.sideTitle}>Choose role, then run</h3>
+              <div className={styles.formRow}>
+                <Select
+                  label="Target role"
+                  value={targetRole}
+                  onChange={(e) => setTargetRole(e.target.value)}
+                  options={[...IT_TARGET_ROLES]}
+                  disabled={locked}
+                />
+                <Select
+                  label="Seniority"
+                  value={seniorityLevel}
+                  onChange={(e) => setSeniorityLevel(e.target.value)}
+                  options={[...SENIORITY_LEVELS]}
+                  disabled={locked}
+                />
+              </div>
+              <div className={styles.analyzeActions}>
+                <Button
+                  variant="primary"
+                  onClick={() => void runAnalysis()}
+                  disabled={!candidateId || locked}
                 >
-                  <span className={styles.stageIcon}>{done ? "✓" : stage.icon}</span>
-                  <div>
-                    <p className={styles.stageName}>{stage.label}</p>
-                    <p className={styles.stageDetail}>
-                      {active && job ? job.message || stage.detail : stage.detail}
-                    </p>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-          <div className={styles.metaRow}>
-            <div>
-              <p className={styles.metaLabel}>Candidate</p>
-              <Text mono>{candidateId.slice(0, 13)}</Text>
-            </div>
-            {job && (
-              <div>
-                <p className={styles.metaLabel}>Job</p>
-                <Text mono>{job.job_id.slice(0, 13)}</Text>
+                  Analyse
+                </Button>
+                <button
+                  type="button"
+                  className={styles.textLink}
+                  onClick={backToIntake}
+                  disabled={locked}
+                >
+                  Different resume
+                </button>
               </div>
-            )}
-          </div>
-        </Panel>
-      )}
 
-      {uploadStep === "done" && report && (
-        <Panel span={12}>
-          <span className={styles.kicker}>{STEP_META.done.label}</span>
-          <h2>{STEP_META.done.title}</h2>
-          <div className={styles.doneHero}>
-            <div className={styles.scoreRing}>
-              <span>{estimateReadiness(report)}</span>
-              <small>readiness</small>
-            </div>
-            <div>
-              <Text>
-                Report ready for <strong>{report.target_role}</strong>
-                {report.seniority_level ? ` · ${report.seniority_level}` : ""}.
-              </Text>
-              <Text muted>
-                Job source: {report.job_source || "curated"}. Open the dashboard for gaps, sprint, and
-                interview prep — or analyze again with a different role.
-              </Text>
-              <div className={styles.actions}>
-                <Button variant="primary" onClick={() => setPage("dashboard")}>
-                  Open dashboard
-                </Button>
-                <Button variant="secondary" onClick={analyzeAgain}>
-                  Analyze again
-                </Button>
-                <Button variant="secondary" onClick={backToIntake}>
-                  New resume
-                </Button>
+              <div className={styles.pipelineSimple}>
+                <p className={styles.previewLabel}>Pipeline</p>
+                <ol className={styles.pipelineFlow}>
+                  {PIPELINE_STAGES.map((stage, index) => (
+                    <li key={stage.key}>
+                      <span className={styles.pipelineIndex}>{index + 1}</span>
+                      <span className={styles.pipelineLabel}>{stage.label}</span>
+                    </li>
+                  ))}
+                </ol>
               </div>
             </div>
-          </div>
-        </Panel>
+          </Panel>
+        </div>
       )}
 
       {uploadStep === "review" && !profile && (
-        <Panel span={12}>
-          <Text muted>No profile loaded. Upload a resume to continue.</Text>
+        <Panel span={12} className={styles.mainCard}>
+          <Text muted>No profile loaded yet.</Text>
           <div className={styles.actions}>
             <Button variant="primary" onClick={backToIntake}>
-              Back to intake
+              Back to upload
             </Button>
           </div>
         </Panel>
       )}
-    </div>
-  );
-}
 
-type TargetFieldsProps = {
-  targetRole: string;
-  setTargetRole: (v: string) => void;
-  seniorityLevel: string;
-  setSeniorityLevel: (v: string) => void;
-  stackEmphasis: string[];
-  setStackEmphasis: (v: string[]) => void;
-  githubUrl: string;
-  setGithubUrl: (v: string) => void;
-  linkedinUrl: string;
-  setLinkedinUrl: (v: string) => void;
-  disabled?: boolean;
-};
+      {uploadStep === "running" && (
+        <div className={styles.quest}>
+          <Panel span={12} className={styles.mainCard}>
+            <div className={styles.questHead}>
+              <div>
+                <p className={styles.kicker}>Step 3 · Agent quest</p>
+                <h2 className={styles.title}>Agents are working</h2>
+                <Text muted>
+                  Watch each agent clear a stage. You can browse other pages — progress is saved.
+                </Text>
+              </div>
+              {job && (
+                <div className={styles.questScore}>
+                  <span className={styles.questScoreValue}>{job.progress}%</span>
+                  <span className={styles.questScoreLabel}>complete</span>
+                </div>
+              )}
+            </div>
 
-function TargetFields({
-  targetRole,
-  setTargetRole,
-  seniorityLevel,
-  setSeniorityLevel,
-  stackEmphasis,
-  setStackEmphasis,
-  githubUrl,
-  setGithubUrl,
-  linkedinUrl,
-  setLinkedinUrl,
-  disabled
-}: TargetFieldsProps) {
-  return (
-    <>
-      <div className={styles.formRow}>
-        <Select
-          label="Target IT role"
-          value={targetRole}
-          onChange={(e) => setTargetRole(e.target.value)}
-          options={[...IT_TARGET_ROLES]}
-          disabled={disabled}
-        />
-        <Select
-          label="Seniority level"
-          value={seniorityLevel}
-          onChange={(e) => setSeniorityLevel(e.target.value)}
-          options={[...SENIORITY_LEVELS]}
-          disabled={disabled}
-        />
-      </div>
-      <div className={styles.stackBlock}>
-        <span className={styles.fieldLabel}>Stack emphasis (optional)</span>
-        <div className={styles.stackChips}>
-          {STACK_OPTIONS.map((option) => {
-            const active = stackEmphasis.includes(option);
-            return (
-              <button
-                key={option}
-                type="button"
-                disabled={disabled}
-                className={`${styles.stackChip} ${active ? styles.stackChipActive : ""}`}
-                onClick={() =>
-                  setStackEmphasis(
-                    active
-                      ? stackEmphasis.filter((item) => item !== option)
-                      : [...stackEmphasis, option].slice(0, 5)
-                  )
-                }
-              >
-                {option}
-              </button>
-            );
-          })}
+            {job && (
+              <div className={styles.questBarWrap}>
+                <div className={styles.questBarTrack}>
+                  <div
+                    className={styles.questBarFill}
+                    style={{ width: `${Math.max(job.progress, 4)}%` }}
+                  />
+                </div>
+                <p className={styles.questMessage}>
+                  {job.message || "Starting the multi-agent pipeline…"}
+                </p>
+              </div>
+            )}
+
+            <ol className={styles.questGrid} aria-label="Analysis pipeline">
+              {PIPELINE_STAGES.map((stage, index) => {
+                const done = jobComplete || (currentStageIndex > -1 && index < currentStageIndex);
+                const active = !jobComplete && !jobFailed && index === currentStageIndex;
+                const lockedStage = !done && !active;
+                return (
+                  <li
+                    key={stage.key}
+                    className={`${styles.questCard} ${done ? styles.questCardDone : ""} ${active ? styles.questCardActive : ""} ${lockedStage ? styles.questCardLocked : ""}`}
+                    style={{ animationDelay: `${index * 70}ms` }}
+                  >
+                    <div className={styles.questCardTop}>
+                      <span className={styles.questBadge}>
+                        {done ? "✓" : active ? "◆" : index + 1}
+                      </span>
+                      {active && <span className={styles.questPulse}>Live</span>}
+                      {done && <span className={styles.questCleared}>Cleared</span>}
+                    </div>
+                    <strong className={styles.questTitle}>{stage.label}</strong>
+                    <p className={styles.questDetail}>
+                      {active && job?.message ? job.message : stage.detail}
+                    </p>
+                    {active && <div className={styles.questShine} aria-hidden />}
+                  </li>
+                );
+              })}
+            </ol>
+
+            <div className={styles.questFoot}>
+              <p>
+                Next unlocks: readiness score, matched jobs, skill gaps, and your 7-day hiring sprint.
+              </p>
+            </div>
+          </Panel>
         </div>
-      </div>
-      <div className={styles.formRow}>
-        <label className={styles.field}>
-          <span className={styles.fieldLabel}>GitHub URL (optional)</span>
-          <input
-            className={styles.input}
-            type="url"
-            placeholder="https://github.com/yourusername"
-            value={githubUrl}
-            disabled={disabled}
-            onChange={(e) => setGithubUrl(e.target.value)}
-          />
-        </label>
-        <label className={styles.field}>
-          <span className={styles.fieldLabel}>LinkedIn URL (optional)</span>
-          <input
-            className={styles.input}
-            type="url"
-            placeholder="https://linkedin.com/in/yourprofile"
-            value={linkedinUrl}
-            disabled={disabled}
-            onChange={(e) => setLinkedinUrl(e.target.value)}
-          />
-        </label>
-      </div>
-    </>
+      )}
+
+      {uploadStep === "done" && report && (
+        <div className={styles.done}>
+          <Panel span={12} className={styles.mainCard}>
+            <div className={styles.doneHero}>
+              <div className={styles.scoreRing}>
+                <span>{estimateReadiness(report)}</span>
+                <small>score</small>
+              </div>
+              <div className={styles.doneCopy}>
+                <p className={styles.kicker}>Step 4</p>
+                <h2 className={styles.title}>Analysis complete</h2>
+                <Text muted>
+                  Your report for <strong>{report.target_role}</strong>
+                  {report.seniority_level ? ` · ${report.seniority_level}` : ""} is ready. Open
+                  Analysis to see your score, skill gaps, and next steps.
+                </Text>
+                <div className={styles.analyzeActions}>
+                  <Button variant="primary" onClick={() => setPage("dashboard")}>
+                    See your results — Open Analysis
+                  </Button>
+                  <Button variant="secondary" onClick={analyzeAgain}>
+                    Re-analyse
+                  </Button>
+                  <button type="button" className={styles.textLink} onClick={backToIntake}>
+                    Upload new resume
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Panel>
+        </div>
+      )}
+    </div>
   );
 }

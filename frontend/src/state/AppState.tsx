@@ -19,6 +19,7 @@ import {
 } from "@/api/client";
 import { clearAuth, loadAuth, saveAuth } from "@/lib/authStorage";
 import { humanizeError } from "@/lib/errors";
+import { navigateToPage, pageFromLocation } from "@/lib/routes";
 import { clearSession, loadSession, saveSession } from "@/lib/session";
 import type {
   AnalysisJobStatus,
@@ -82,6 +83,7 @@ type AppState = {
   authToken: string | null;
   myCandidates: CandidateSummary[];
   refreshMyCandidates: () => Promise<void>;
+  selectCandidate: (id: string) => Promise<void>;
   completeSignIn: (token: string, user: AuthUser) => void;
   logout: () => void;
   clearWorkspace: () => void;
@@ -92,7 +94,7 @@ type AppState = {
 const AppStateContext = createContext<AppState | null>(null);
 
 export function AppStateProvider({ children }: PropsWithChildren) {
-  const [page, setPage] = useState<PageId>("landing");
+  const [page, setPageState] = useState<PageId>(() => pageFromLocation() ?? "landing");
   const [file, setFile] = useState<File | null>(null);
   const [candidateId, setCandidateId] = useState("");
   const [targetRole, setTargetRole] = useState("Backend Developer");
@@ -115,6 +117,20 @@ export function AppStateProvider({ children }: PropsWithChildren) {
   const hydrated = useRef(false);
   const pollingRef = useRef(false);
 
+  const setPage = useCallback((next: PageId, replace = false) => {
+    setPageState(next);
+    navigateToPage(next, replace);
+  }, []);
+
+  useEffect(() => {
+    const onPopState = () => {
+      const fromUrl = pageFromLocation();
+      if (fromUrl) setPageState(fromUrl);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
   const refreshMyCandidates = useCallback(async () => {
     if (!loadAuth()?.token) {
       setMyCandidates([]);
@@ -133,7 +149,7 @@ export function AppStateProvider({ children }: PropsWithChildren) {
       saveAuth({ token, user });
       setAuthToken(token);
       setAuthUser(user);
-      setStatus(`Signed in as ${user.name || user.email}`);
+      setStatus("Welcome back — upload a resume or open a saved CV.");
       void refreshMyCandidates();
     },
     [refreshMyCandidates]
@@ -152,7 +168,7 @@ export function AppStateProvider({ children }: PropsWithChildren) {
     setBusy(false);
     setStatus("Workspace cleared — upload a resume to start.");
     setPage("upload");
-  }, []);
+  }, [setPage]);
 
   const logout = useCallback(() => {
     clearAuth();
@@ -162,7 +178,53 @@ export function AppStateProvider({ children }: PropsWithChildren) {
     clearWorkspace();
     setPage("landing");
     setStatus("Signed out.");
-  }, [clearWorkspace]);
+  }, [clearWorkspace, setPage]);
+
+  const selectCandidate = useCallback(
+    async (id: string) => {
+      if (busy) return;
+      try {
+        setBusy(true);
+        setAnalysisError(null);
+        setAnalysisJob(null);
+        const loadedProfile = await getProfile(id);
+        setCandidateId(id);
+        setProfile(loadedProfile);
+        if (loadedProfile.github_url) setGithubUrl(loadedProfile.github_url);
+        if (loadedProfile.linkedin_url) setLinkedinUrl(loadedProfile.linkedin_url);
+        setFile(null);
+
+        let saved: ReportSummary[] = [];
+        try {
+          saved = await listReports(id);
+        } catch {
+          /* no reports yet */
+        }
+        saved.sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+        setReports(saved);
+
+        if (saved[0]?.report_id) {
+          const loadedReport = await getReport(saved[0].report_id);
+          setReport(loadedReport);
+          setUploadStep("done");
+          setStatus("Loaded latest report for this CV.");
+          setPage("dashboard");
+        } else {
+          setReport(null);
+          setUploadStep("review");
+          setStatus("CV loaded — verify, then run analysis.");
+          setPage("upload");
+        }
+      } catch (error) {
+        const message = humanizeError(error);
+        setAnalysisError(message);
+        setStatus(message);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [busy, setPage]
+  );
 
   const finishJobSuccess = useCallback(
     async (data: CareerReadinessReport, activeCandidateId: string) => {
@@ -265,6 +327,10 @@ export function AppStateProvider({ children }: PropsWithChildren) {
 
     const session = loadSession();
     if (!session?.candidateId && !auth?.token) {
+      // Unknown deep link → land on home URL
+      if (!pageFromLocation()) {
+        setPage("landing", true);
+      }
       setSessionReady(true);
       return;
     }
@@ -277,9 +343,15 @@ export function AppStateProvider({ children }: PropsWithChildren) {
       setGithubUrl(session.githubUrl || "");
       setLinkedinUrl(session.linkedinUrl || "");
       if (session.uploadStep) setUploadStep(session.uploadStep);
-      if (session.page && session.page !== "landing") {
-        setPage(session.page);
+      // Prefer the URL the user opened; only restore session page on `/`
+      const urlPage = pageFromLocation();
+      if ((!urlPage || urlPage === "landing") && session.page && session.page !== "landing") {
+        setPage(session.page, true);
+      } else if (urlPage) {
+        setPageState(urlPage);
       }
+    } else if (!pageFromLocation()) {
+      setPage("landing", true);
     }
 
     void (async () => {
@@ -431,6 +503,7 @@ export function AppStateProvider({ children }: PropsWithChildren) {
       authToken,
       myCandidates,
       refreshMyCandidates,
+      selectCandidate,
       completeSignIn,
       logout,
       clearWorkspace,
@@ -439,6 +512,7 @@ export function AppStateProvider({ children }: PropsWithChildren) {
     }),
     [
       page,
+      setPage,
       file,
       candidateId,
       targetRole,
@@ -459,6 +533,7 @@ export function AppStateProvider({ children }: PropsWithChildren) {
       authToken,
       myCandidates,
       refreshMyCandidates,
+      selectCandidate,
       completeSignIn,
       logout,
       clearWorkspace,

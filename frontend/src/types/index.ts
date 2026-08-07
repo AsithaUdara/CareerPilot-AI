@@ -128,6 +128,12 @@ export type RoleCount = {
   count: number;
 };
 
+export type GapFrequency = {
+  gap: string;
+  count: number;
+  status: "persistent" | "improving" | "new" | "current" | string;
+};
+
 export type CareerAnalytics = {
   candidate_id: string;
   report_count: number;
@@ -137,6 +143,15 @@ export type CareerAnalytics = {
   score_delta?: number | null;
   closed_gaps: string[];
   new_gaps: string[];
+  latest_score?: number | null;
+  best_score?: number | null;
+  average_score?: number | null;
+  latest_role?: string;
+  skills_tracked?: number;
+  matched_jobs?: number;
+  gap_frequency?: GapFrequency[];
+  next_focus?: string[];
+  insight?: string;
 };
 
 export type WorkspaceInsights = {

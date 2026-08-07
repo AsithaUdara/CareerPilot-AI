@@ -89,32 +89,9 @@
 }
 
 .brand {
-  font-family: $font-display;
-  font-weight: 700;
-  font-size: 1.05rem;
   display: flex;
   align-items: center;
-  gap: 8px;
-
-  em {
-    font-style: normal;
-    background: linear-gradient(90deg, $accent, $accent-2);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-}
-
-.brandMark {
-  display: inline-grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 10px;
-  color: #fff;
-  font-size: 0.8rem;
-  background: linear-gradient(135deg, $accent, $accent-2);
-  box-shadow: 0 8px 20px rgba(31, 122, 239, 0.35);
+  min-width: 0;
 }
 
 .navLinks {
@@ -274,6 +251,10 @@
   text-decoration: none;
   font-weight: 600;
   color: $ink;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
   @include glass(16px);
   transition: transform 200ms ease;
 

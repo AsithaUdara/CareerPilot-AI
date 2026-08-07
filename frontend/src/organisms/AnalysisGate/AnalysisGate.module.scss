@@ -1,0 +1,138 @@
+@use "@/styles/tokens" as *;
+
+.gate {
+  display: grid;
+  gap: 16px;
+}
+
+.pickerCard {
+  display: grid;
+  gap: 18px;
+}
+
+.pickerHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.kicker {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #1559c5;
+}
+
+.title {
+  margin: 0 0 6px;
+  font-family: $font-display;
+  font-size: 1.35rem;
+  color: $ink;
+}
+
+.cvGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.cvCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(27, 36, 51, 0.1);
+  background: rgba(255, 255, 255, 0.72);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+
+  &:hover {
+    border-color: rgba(31, 122, 239, 0.45);
+    box-shadow: 0 10px 24px rgba(31, 122, 239, 0.14);
+    transform: translateY(-2px);
+
+    .cvCta {
+      color: #1559c5;
+    }
+  }
+}
+
+.cvIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 0.9rem;
+  color: #1559c5;
+  background: rgba(31, 122, 239, 0.1);
+}
+
+.cvName {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: $ink;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cvSummary {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #5a6578;
+}
+
+.cvFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin-top: auto;
+}
+
+.cvDate {
+  font-size: 0.74rem;
+  color: #8a93a3;
+}
+
+.cvCta {
+  margin-left: auto;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #3d4a5f;
+  transition: color 180ms ease;
+}
+
+.loadingCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 26px;
+}
+
+.spinner {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 3px solid rgba(31, 122, 239, 0.16);
+  border-top-color: #1f7aef;
+  animation: gateSpin 800ms linear infinite;
+}
+
+@keyframes gateSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}

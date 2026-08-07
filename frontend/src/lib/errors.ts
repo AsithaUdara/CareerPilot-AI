@@ -25,8 +25,22 @@ export function humanizeError(error: unknown): string {
   if (lower.includes("401") || lower.includes("unauthorized") || lower.includes("sign in")) {
     return "Sign in with Google to continue, then try again.";
   }
+  if (
+    lower.includes("ssl") ||
+    lower.includes("certificate_verify_failed") ||
+    lower.includes("certificate verify failed")
+  ) {
+    return "Secure connection to Gemini failed (SSL). For local Windows, set SSL_VERIFY=0 in backend/.env and restart the API.";
+  }
   if (lower.includes("403") || lower.includes("forbidden") || lower.includes("not yours")) {
     return "You don’t have access to this candidate profile.";
+  }
+  if (
+    lower.includes("does not look like a resume") ||
+    lower.includes("little readable text") ||
+    lower.includes("not a resume")
+  ) {
+    return raw;
   }
   return raw;
 }

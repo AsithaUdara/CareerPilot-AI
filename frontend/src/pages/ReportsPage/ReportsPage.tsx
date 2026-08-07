@@ -1,12 +1,21 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/atoms/Button";
-import { Chip } from "@/atoms/Chip";
-import { Panel } from "@/atoms/Panel";
 import { Text } from "@/atoms/Text";
-import { exportReportPdf, getAgent, getReport, listReports } from "@/api/client";
-import { EmptyState } from "@/molecules/EmptyState";
+import { estimateReadiness, exportReportPdf, getAgent, getReport, listReports } from "@/api/client";
 import { useAppState } from "@/state/AppState";
+import type { CareerReadinessReport } from "@/types";
 import styles from "./ReportsPage.module.scss";
+
+function formatWhen(value?: string | null): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+}
 
 export function ReportsPage() {
   const {
@@ -21,7 +30,8 @@ export function ReportsPage() {
     setUploadStep
   } = useAppState();
   const [loading, setLoading] = useState(false);
-  const [compareReport, setCompareReport] = useState<typeof report | null>(null);
+  const [compareReport, setCompareReport] = useState<CareerReadinessReport | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -45,89 +55,97 @@ export function ReportsPage() {
     };
   }, [candidateId, setReports, setStatus]);
 
+  if (!report || !candidateId) return null;
+
   const openReport = async (reportId: string) => {
     try {
+      setBusyId(reportId);
       setStatus("Loading saved report...");
       const data = await getReport(reportId);
       setReport(data);
       setProfile(data.profile);
+      setCompareReport(null);
       setPage("dashboard");
-      setStatus(
-        `Loaded report (${data.job_source || "curated"} jobs, score ${data.readiness_score ?? "n/a"}).`
-      );
+      setStatus(`Loaded report for ${data.target_role}.`);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not open report");
+    } finally {
+      setBusyId(null);
     }
   };
 
   const compareWith = async (reportId: string) => {
+    if (compareReport?.report_id === reportId) {
+      setCompareReport(null);
+      return;
+    }
     try {
+      setBusyId(reportId);
       setStatus("Loading report for comparison...");
       const data = await getReport(reportId);
       setCompareReport(data);
-      setStatus("Comparison loaded.");
+      setStatus("Comparison ready.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not compare reports");
+    } finally {
+      setBusyId(null);
     }
   };
 
   const downloadPdf = async (reportId: string) => {
     try {
+      setBusyId(reportId);
       setStatus("Generating PDF export...");
-      const blob = await exportReportPdf(reportId);
+      const { blob, filename } = await exportReportPdf(reportId);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `careerpilot-${reportId.slice(0, 8)}.pdf`;
+      a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
       setStatus("PDF exported.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "PDF export failed");
+    } finally {
+      setBusyId(null);
     }
   };
 
-  const compareMetrics =
-    report && compareReport
-      ? {
-          scoreDelta: (report.readiness_score || 0) - (compareReport.readiness_score || 0),
-          gapsNow: getAgent(report, "SkillGapAgent")?.gaps || [],
-          gapsBefore: getAgent(compareReport, "SkillGapAgent")?.gaps || [],
-        }
-      : null;
-  const closedGaps = compareMetrics
-    ? compareMetrics.gapsBefore.filter((gap) => !compareMetrics.gapsNow.includes(gap))
+  const activeScore = estimateReadiness(report);
+  const compareScore = compareReport ? estimateReadiness(compareReport) : null;
+  const scoreDelta =
+    compareScore !== null ? activeScore - compareScore : null;
+  const gapsNow = getAgent(report, "SkillGapAgent")?.gaps || [];
+  const gapsBefore = compareReport
+    ? getAgent(compareReport, "SkillGapAgent")?.gaps || []
     : [];
-  const newGaps = compareMetrics
-    ? compareMetrics.gapsNow.filter((gap) => !compareMetrics.gapsBefore.includes(gap))
-    : [];
-
-  if (!candidateId) {
-    return (
-      <EmptyState
-        title="No candidate selected"
-        description="Upload a resume first to create and browse saved reports."
-        actionLabel="Upload Resume"
-        onAction={() => setPage("upload")}
-      />
-    );
-  }
+  const closedGaps = gapsBefore.filter((gap) => !gapsNow.includes(gap));
+  const newGaps = gapsNow.filter((gap) => !gapsBefore.includes(gap));
+  const jobs = report.matched_jobs || [];
 
   return (
-    <div className={styles.stack}>
-      <Panel>
-        <div className={styles.head}>
+    <div className={styles.page}>
+      <section className={styles.card}>
+        <div className={styles.sectionHead}>
           <div>
-            <span className={styles.kicker}>Analysis history</span>
-            <h2>Saved analyses</h2>
+            <p className={styles.kicker}>Saved reports</p>
+            <h2 className={styles.sectionTitle}>Analysis history</h2>
+            <p className={styles.lead}>
+              {loading
+                ? "Refreshing saved analyses…"
+                : `${reports.length} saved ${reports.length === 1 ? "analysis" : "analyses"} for this CV.`}
+            </p>
           </div>
-          <Chip>{loading ? "Refreshing..." : `${reports.length} reports`}</Chip>
-        </div>
-        {report?.report_id && (
-          <div className={styles.quickActions}>
-            <Button variant="primary" onClick={() => void downloadPdf(report.report_id!)}>
-              Download PDF report
-            </Button>
+          <div className={styles.actions}>
+            {report.report_id && (
+              <Button
+                variant="primary"
+                onClick={() => void downloadPdf(report.report_id!)}
+                disabled={busyId === report.report_id}
+              >
+                Download PDF
+              </Button>
+            )}
             <Button
               variant="secondary"
               onClick={() => {
@@ -136,118 +154,143 @@ export function ReportsPage() {
                 setStatus("Adjust role or stack, then analyze again.");
               }}
             >
-              Analyze again
+              Re-analyse
             </Button>
-            <Text muted tiny>
-              Tip: click <strong>Compare</strong> on any row to see progress vs your active report.
-            </Text>
           </div>
-        )}
-        <div className={styles.table}>
-          <div className={`${styles.row} ${styles.headRow}`}>
-            <span>Report</span>
-            <span>Target role</span>
-            <span>Created</span>
-            <span />
-            <span />
-          </div>
-          {reports.length === 0 && <Text muted>No reports saved for this candidate yet.</Text>}
-          {reports.map((item) => (
-            <div className={styles.row} key={item.report_id}>
-              <span className={styles.mono}>{item.report_id.slice(0, 8)}</span>
-              <span>{item.target_role}</span>
-              <span>{item.created_at ? new Date(item.created_at).toLocaleString() : "—"}</span>
-              <Button variant="secondary" size="sm" onClick={() => void openReport(item.report_id)}>
-                Open
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => void compareWith(item.report_id)}>
-                Compare
-              </Button>
-            </div>
-          ))}
         </div>
-      </Panel>
 
-      {compareMetrics && (
-        <Panel delay={1}>
-          <div className={styles.head}>
+        {reports.length === 0 ? (
+          <Text muted>No reports saved for this CV yet.</Text>
+        ) : (
+          <ul className={styles.reportList}>
+            {reports.map((item) => {
+              const isActive = item.report_id === report.report_id;
+              const isComparing = item.report_id === compareReport?.report_id;
+              return (
+                <li
+                  key={item.report_id}
+                  className={`${styles.reportItem} ${isActive ? styles.reportActive : ""}`}
+                >
+                  <div className={styles.reportMeta}>
+                    <strong>{item.target_role}</strong>
+                    <span>
+                      {formatWhen(item.created_at)}
+                      {isActive ? " · Active" : ""}
+                    </span>
+                  </div>
+                  <div className={styles.reportActions}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={busyId === item.report_id}
+                      onClick={() => void openReport(item.report_id)}
+                    >
+                      Open
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={busyId === item.report_id || isActive}
+                      onClick={() => void compareWith(item.report_id)}
+                    >
+                      {isComparing ? "Hide" : "Compare"}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={busyId === item.report_id}
+                      onClick={() => void downloadPdf(item.report_id)}
+                    >
+                      PDF
+                    </Button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      {compareReport && scoreDelta !== null && (
+        <section className={styles.card}>
+          <div className={styles.sectionHead}>
             <div>
-              <span className={styles.kicker}>Re-analysis comparison</span>
-              <h2>Current vs selected report</h2>
-            </div>
-            <Chip>{compareMetrics.scoreDelta >= 0 ? "Improved" : "Needs work"}</Chip>
-          </div>
-          <div className={styles.compareGrid}>
-            <div className={`${styles.metricCard} ${compareMetrics.scoreDelta >= 0 ? styles.good : styles.warn}`}>
-              <p className={styles.metricLabel}>Readiness delta</p>
-              <p className={styles.metricValue}>
-                {compareMetrics.scoreDelta >= 0 ? "+" : ""}
-                {compareMetrics.scoreDelta}
+              <p className={styles.kicker}>Comparison</p>
+              <h3 className={styles.sectionTitle}>
+                Active vs {compareReport.target_role}
+              </h3>
+              <p className={styles.lead}>
+                Compared with analysis from{" "}
+                {formatWhen(
+                  reports.find((r) => r.report_id === compareReport.report_id)?.created_at
+                )}
               </p>
             </div>
-            <div className={styles.metricCard}>
-              <p className={styles.metricLabel}>Closed gaps</p>
-              <div className={styles.pillRow}>
-                {closedGaps.length > 0 ? (
-                  closedGaps.map((gap) => (
-                    <span key={gap} className={`${styles.gapPill} ${styles.closed}`}>
-                      {gap}
-                    </span>
-                  ))
-                ) : (
-                  <span className={styles.emptyPill}>None</span>
-                )}
-              </div>
-            </div>
-            <div className={styles.metricCard}>
-              <p className={styles.metricLabel}>New gaps</p>
-              <div className={styles.pillRow}>
-                {newGaps.length > 0 ? (
-                  newGaps.map((gap) => (
-                    <span key={gap} className={`${styles.gapPill} ${styles.new}`}>
-                      {gap}
-                    </span>
-                  ))
-                ) : (
-                  <span className={styles.emptyPill}>None</span>
-                )}
-              </div>
-            </div>
+            <span
+              className={`${styles.delta} ${scoreDelta >= 0 ? styles.deltaUp : styles.deltaDown}`}
+            >
+              {scoreDelta >= 0 ? "+" : ""}
+              {scoreDelta} score
+            </span>
           </div>
-        </Panel>
+
+          <div className={styles.compareGrid}>
+            <article className={styles.compareCard}>
+              <p className={styles.fieldLabel}>Active score</p>
+              <strong className={styles.compareValue}>{activeScore}</strong>
+            </article>
+            <article className={styles.compareCard}>
+              <p className={styles.fieldLabel}>Compared score</p>
+              <strong className={styles.compareValue}>{compareScore}</strong>
+            </article>
+            <article className={styles.compareCard}>
+              <p className={styles.fieldLabel}>Closed gaps</p>
+              <p className={styles.compareText}>
+                {closedGaps.length ? closedGaps.slice(0, 3).join(" · ") : "None"}
+              </p>
+            </article>
+            <article className={styles.compareCard}>
+              <p className={styles.fieldLabel}>New gaps</p>
+              <p className={styles.compareText}>
+                {newGaps.length ? newGaps.slice(0, 3).join(" · ") : "None"}
+              </p>
+            </article>
+          </div>
+        </section>
       )}
 
-      {report?.matched_jobs && report.matched_jobs.length > 0 && (
-        <Panel delay={1}>
-          <div className={styles.head}>
+      {jobs.length > 0 && (
+        <section className={styles.card}>
+          <div className={styles.sectionHead}>
             <div>
-              <span className={styles.kicker}>Job Matching Agent</span>
-              <h2>Jobs from active report</h2>
+              <p className={styles.kicker}>From active report</p>
+              <h3 className={styles.sectionTitle}>Matched jobs</h3>
             </div>
-            <Chip>{report.job_source || "curated"}</Chip>
+            <span className={styles.sourcePill}>{report.job_source || "curated"}</span>
           </div>
-          <div className={styles.jobStack}>
-            {report.matched_jobs.map((job) => (
-              <div className={styles.jobRow} key={job.id}>
+          <ul className={styles.jobList}>
+            {jobs.slice(0, 4).map((job) => (
+              <li key={job.id} className={styles.jobItem}>
                 <div>
-                  <Text>{job.label}</Text>
-                  <Text muted tiny>
-                    {job.required_skills?.slice(0, 6).join(", ")}
-                  </Text>
+                  <strong>{job.label}</strong>
+                  <span>
+                    {job.company || "Company n/a"}
+                    {job.required_skills?.length
+                      ? ` · ${job.required_skills.slice(0, 4).join(", ")}`
+                      : ""}
+                  </span>
                 </div>
                 {job.url ? (
                   <a href={job.url} target="_blank" rel="noreferrer">
-                    Open
+                    Open →
                   </a>
                 ) : (
-                  <Text muted tiny>
-                    {job.source}
-                  </Text>
+                  <span className={styles.sourcePill}>{job.source}</span>
                 )}
-              </div>
+              </li>
             ))}
-          </div>
-        </Panel>
+          </ul>
+        </section>
       )}
     </div>
   );

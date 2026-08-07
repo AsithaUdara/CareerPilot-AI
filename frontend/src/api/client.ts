@@ -65,6 +65,31 @@ export async function signInWithGoogle(idToken: string): Promise<{ access_token:
   return parseJson(res);
 }
 
+export async function signUpWithEmail(
+  email: string,
+  password: string,
+  name: string
+): Promise<{ access_token: string; user: AuthUser }> {
+  const res = await fetch(`${API_BASE}/auth/signup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, name })
+  });
+  return parseJson(res);
+}
+
+export async function signInWithEmail(
+  email: string,
+  password: string
+): Promise<{ access_token: string; user: AuthUser }> {
+  const res = await fetch(`${API_BASE}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
+  return parseJson(res);
+}
+
 export async function getMe(): Promise<AuthUser> {
   const res = await fetch(`${API_BASE}/auth/me`, { headers: authHeaders() });
   return parseJson(res);
@@ -184,14 +209,30 @@ export async function getReport(reportId: string): Promise<CareerReadinessReport
   return parseJson<CareerReadinessReport>(res);
 }
 
-export async function exportReportPdf(reportId: string): Promise<Blob> {
+export async function exportReportPdf(
+  reportId: string
+): Promise<{ blob: Blob; filename: string }> {
   const res = await fetch(`${API_BASE}/reports/${reportId}/export.pdf`, {
     headers: authHeaders()
   });
   if (!res.ok) {
     throw new ApiError(humanizeError(`Export failed (${res.status})`), res.status);
   }
-  return res.blob();
+  const blob = await res.blob();
+  const disposition = res.headers.get("Content-Disposition") || "";
+  const utfMatch = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
+  const plainMatch = /filename="?([^";]+)"?/i.exec(disposition);
+  let filename = `CareerPilot-Report-${reportId.slice(0, 8)}.pdf`;
+  if (utfMatch?.[1]) {
+    try {
+      filename = decodeURIComponent(utfMatch[1]);
+    } catch {
+      filename = utfMatch[1];
+    }
+  } else if (plainMatch?.[1]) {
+    filename = plainMatch[1];
+  }
+  return { blob, filename };
 }
 
 export async function chatWithMentor(

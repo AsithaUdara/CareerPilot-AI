@@ -1,1 +1,1 @@
-export { GoogleSignIn } from "./GoogleSignIn";
+export { GoogleSignIn, UserAuthChip } from "./GoogleSignIn";

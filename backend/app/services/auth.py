@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+import re
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
@@ -13,6 +16,8 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.db import get_session
 from app.models import UserModel
+
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 class AuthUser:
@@ -30,6 +35,31 @@ class AuthUser:
         self.name = name
         self.picture_url = picture_url
         self.google_sub = google_sub
+
+
+def hash_password(password: str) -> str:
+    salt = secrets.token_hex(16)
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 120_000).hex()
+    return f"{salt}${digest}"
+
+
+def verify_password(password: str, stored: str | None) -> bool:
+    if not stored or "$" not in stored:
+        return False
+    salt, digest = stored.split("$", 1)
+    check = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 120_000).hex()
+    return secrets.compare_digest(check, digest)
+
+
+def normalize_email(email: str) -> str:
+    return email.strip().lower()
+
+
+def validate_email(email: str) -> str:
+    normalized = normalize_email(email)
+    if not _EMAIL_RE.match(normalized):
+        raise HTTPException(status_code=400, detail="Enter a valid email address.")
+    return normalized
 
 
 def create_access_token(user_id: str, email: str) -> str:
@@ -70,9 +100,9 @@ def verify_google_id_token(token: str) -> dict[str, Any]:
 
 def upsert_google_user(session: Session, claims: dict[str, Any]) -> UserModel:
     google_sub = str(claims.get("sub") or "")
-    email = str(claims.get("email") or "")
-    if not google_sub or not email:
-        raise HTTPException(status_code=400, detail="Google token missing subject or email.")
+    email = validate_email(str(claims.get("email") or ""))
+    if not google_sub:
+        raise HTTPException(status_code=400, detail="Google token missing subject.")
 
     existing = session.query(UserModel).filter(UserModel.google_sub == google_sub).one_or_none()
     if existing:
@@ -82,15 +112,53 @@ def upsert_google_user(session: Session, claims: dict[str, Any]) -> UserModel:
         session.flush()
         return existing
 
+    by_email = session.query(UserModel).filter(UserModel.email == email).one_or_none()
+    if by_email:
+        by_email.google_sub = google_sub
+        by_email.name = str(claims.get("name") or by_email.name or email)
+        by_email.picture_url = str(claims.get("picture") or by_email.picture_url or "")
+        session.flush()
+        return by_email
+
     user = UserModel(
         id=str(uuid4()),
         google_sub=google_sub,
         email=email,
         name=str(claims.get("name") or email),
         picture_url=str(claims.get("picture") or ""),
+        password_hash=None,
     )
     session.add(user)
     session.flush()
+    return user
+
+
+def register_email_user(session: Session, *, email: str, password: str, name: str) -> UserModel:
+    email_norm = validate_email(email)
+    if len(password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
+    existing = session.query(UserModel).filter(UserModel.email == email_norm).one_or_none()
+    if existing:
+        raise HTTPException(status_code=409, detail="An account with this email already exists. Sign in instead.")
+    display = (name or "").strip() or email_norm.split("@")[0]
+    user = UserModel(
+        id=str(uuid4()),
+        google_sub=None,
+        email=email_norm,
+        name=display,
+        picture_url="",
+        password_hash=hash_password(password),
+    )
+    session.add(user)
+    session.flush()
+    return user
+
+
+def authenticate_email_user(session: Session, *, email: str, password: str) -> UserModel:
+    email_norm = validate_email(email)
+    user = session.query(UserModel).filter(UserModel.email == email_norm).one_or_none()
+    if not user or not verify_password(password, getattr(user, "password_hash", None)):
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
     return user
 
 
@@ -114,14 +182,13 @@ def get_user_from_token(session: Session, token: str) -> AuthUser:
         email=user.email,
         name=user.name,
         picture_url=user.picture_url or "",
-        google_sub=user.google_sub,
+        google_sub=user.google_sub or "",
     )
 
 
 def get_optional_user(
     authorization: str | None = Header(default=None),
 ) -> AuthUser | None:
-    settings = get_settings()
     token = _bearer_token(authorization)
     if not token:
         return None
@@ -136,7 +203,7 @@ def require_user(
     settings = get_settings()
     token = _bearer_token(authorization)
     if settings.auth_required and not token:
-        raise HTTPException(status_code=401, detail="Sign in with Google to continue.")
+        raise HTTPException(status_code=401, detail="Sign in to continue.")
     if not token:
         return None
     with get_session() as session:
@@ -161,6 +228,14 @@ def assert_candidate_access(
     if owner and (not user or owner != user.id):
         raise HTTPException(status_code=403, detail="This candidate profile is not yours.")
     if not owner and user:
-        # Unowned legacy row: claim for the signed-in user on first access.
         model.user_id = user.id
         session.flush()
+
+
+def user_to_response(user: UserModel) -> dict[str, str]:
+    return {
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "picture_url": user.picture_url or "",
+    }
