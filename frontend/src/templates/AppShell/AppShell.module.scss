@@ -1,59 +1,99 @@
 .shell {
   position: relative;
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 18px;
   min-height: 100vh;
-  padding: 18px;
+  /* Leave room for fixed sidebar (280 + gap 18 + left pad 18) */
+  padding: 18px 18px 18px 316px;
+  transition: padding-left 220ms ease;
+}
+
+.shellCollapsed {
+  /* Collapsed sidebar 88 + gap 18 + left pad 18 */
+  padding-left: 124px;
 }
 
 .ambient {
   position: fixed;
   border-radius: 999px;
-  filter: blur(40px);
-  opacity: 0.55;
+  filter: blur(56px);
+  opacity: 0.6;
   pointer-events: none;
   z-index: 0;
   animation: floaty 10s ease-in-out infinite;
 }
 
 .a {
-  width: 280px;
-  height: 280px;
+  width: 320px;
+  height: 320px;
   left: 8%;
-  top: 18%;
-  background: rgba(31, 122, 239, 0.28);
+  top: 14%;
+  background: radial-gradient(circle at 30% 30%, rgba(31, 122, 239, 0.4), rgba(31, 122, 239, 0.08));
 }
 
 .b {
-  width: 320px;
-  height: 320px;
-  right: 6%;
-  bottom: 8%;
-  background: rgba(18, 163, 154, 0.22);
+  width: 360px;
+  height: 360px;
+  right: 4%;
+  bottom: 6%;
+  background: radial-gradient(circle at 30% 30%, rgba(18, 163, 154, 0.34), rgba(18, 163, 154, 0.06));
   animation-direction: reverse;
   animation-duration: 12s;
 }
 
+.c {
+  width: 260px;
+  height: 260px;
+  right: 30%;
+  top: -60px;
+  background: radial-gradient(circle at 30% 30%, rgba(124, 92, 255, 0.28), rgba(124, 92, 255, 0.04));
+  animation-duration: 14s;
+}
+
+.gridGlow {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(31, 122, 239, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 122, 239, 0.045) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 75% 55% at 50% 0%, black 25%, transparent 75%);
+}
+
 .main {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 16px;
   min-width: 0;
+  max-width: 100%;
+  min-height: calc(100vh - 36px);
 }
 
 .content {
   min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.contentFill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 @media (max-width: 1100px) {
-  .shell {
-    grid-template-columns: 1fr;
+  .shell,
+  .shellCollapsed {
+    padding: 18px;
   }
 }
 
 @media (max-width: 720px) {
-  .shell {
+  .shell,
+  .shellCollapsed {
     padding: 12px;
   }
 }

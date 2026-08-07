@@ -9,7 +9,7 @@ CareerPilot backend uses an **Orchestrator-driven Multi-Agent Pipeline with even
 | Orchestrator-Agent | `app/pipeline/orchestrator.py` coordinates specialized agents |
 | Pipeline | Resume → Analysis → Matching → Gaps → Roadmap → Optimization → Interview → Report |
 | Event-Driven | `POST /analyze` enqueues a job and returns `job_id` immediately |
-| RAG | Agents retrieve role knowledge from Qdrant before generation |
+| RAG | Agents retrieve role knowledge from persistent Qdrant (Gemini embeddings) before generation |
 
 ## Flow
 
@@ -38,4 +38,4 @@ celery -A app.workers.celery_app.celery_app worker --loglevel=INFO --pool=solo
 
 ## Interview answer
 
-> We use an Orchestrator-driven Multi-Agent Pipeline with event-driven async processing, built on FastAPI.
+> We use a LangGraph Orchestrator-driven Multi-Agent Pipeline with Gemini tool calling, RAG, candidate memory, and event-driven async processing on FastAPI.

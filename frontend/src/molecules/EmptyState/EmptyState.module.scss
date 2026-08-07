@@ -1,7 +1,55 @@
+@use "@/styles/tokens" as *;
+
 .empty {
   text-align: center;
   display: grid;
   justify-items: center;
-  gap: 10px;
-  padding: 36px;
+  gap: 12px;
+  padding: 64px 36px;
+}
+
+.iconWrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  margin-bottom: 8px;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  font-size: 1.6rem;
+  color: #fff;
+  background: linear-gradient(135deg, $accent, $violet 70%, $accent-2 130%);
+  box-shadow: 0 16px 36px rgba(31, 122, 239, 0.35);
+  animation: floaty 5s ease-in-out infinite;
+  z-index: 1;
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 1.5px solid rgba(31, 122, 239, 0.2);
+  animation: ripple 3s ease-out infinite;
+}
+
+.ringB {
+  animation-delay: 1.5s;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
 }

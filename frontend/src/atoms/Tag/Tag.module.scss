@@ -1,9 +1,17 @@
 @use "@/styles/tokens" as *;
 
 .tag {
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(31, 122, 239, 0.1);
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(31, 122, 239, 0.18);
   color: #1559c5;
   font-size: 0.8rem;
+  font-weight: 500;
+  transition: transform 180ms ease, background 180ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    background: rgba(31, 122, 239, 0.1);
+  }
 }

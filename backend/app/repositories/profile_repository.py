@@ -2,29 +2,38 @@ from sqlalchemy.orm import Session
 
 from app.models import CandidateProfileModel
 from app.schemas import CandidateProfile
+from app.services.resume_parser import dump_profile_lists, load_profile_list
 
 
-def _to_csv(items: list[str]) -> str:
-    return ",".join(items)
-
-
-def _from_csv(value: str) -> list[str]:
-    if not value:
-        return []
-    return [item for item in value.split(",") if item]
-
-
-def save_profile(session: Session, filename: str, profile: CandidateProfile) -> None:
+def save_profile(
+    session: Session,
+    filename: str,
+    profile: CandidateProfile,
+    user_id: str | None = None,
+) -> None:
+    lists = dump_profile_lists(profile)
     model = CandidateProfileModel(
         candidate_id=profile.candidate_id,
+        user_id=user_id,
         filename=filename,
         summary=profile.summary,
-        skills_csv=_to_csv(profile.skills),
-        education_csv=_to_csv(profile.education),
-        projects_csv=_to_csv(profile.projects),
-        experience_csv=_to_csv(profile.experience),
+        skills_csv=lists["skills"],
+        education_csv=lists["education"],
+        projects_csv=lists["projects"],
+        experience_csv=lists["experience"],
+        github_url=profile.github_url or "",
+        linkedin_url=profile.linkedin_url or "",
     )
     session.merge(model)
+
+
+def list_profiles_for_user(session: Session, user_id: str) -> list[CandidateProfileModel]:
+    return (
+        session.query(CandidateProfileModel)
+        .filter(CandidateProfileModel.user_id == user_id)
+        .order_by(CandidateProfileModel.created_at.desc())
+        .all()
+    )
 
 
 def get_profile(session: Session, candidate_id: str) -> CandidateProfile | None:
@@ -34,8 +43,10 @@ def get_profile(session: Session, candidate_id: str) -> CandidateProfile | None:
     return CandidateProfile(
         candidate_id=model.candidate_id,
         summary=model.summary,
-        skills=_from_csv(model.skills_csv),
-        education=_from_csv(model.education_csv),
-        projects=_from_csv(model.projects_csv),
-        experience=_from_csv(model.experience_csv),
+        skills=load_profile_list(model.skills_csv),
+        education=load_profile_list(model.education_csv),
+        projects=load_profile_list(model.projects_csv),
+        experience=load_profile_list(model.experience_csv),
+        github_url=getattr(model, "github_url", "") or "",
+        linkedin_url=getattr(model, "linkedin_url", "") or "",
     )

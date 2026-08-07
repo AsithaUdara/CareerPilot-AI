@@ -3,18 +3,53 @@
 .wrap {
   display: grid;
   gap: 8px;
-  margin-top: 16px;
+  margin: 0;
+  min-width: 0;
 }
 
 .label {
   font-weight: 600;
   font-size: 0.9rem;
+  color: $ink;
+}
+
+.control {
+  position: relative;
+  min-width: 0;
 }
 
 .select {
   width: 100%;
+  max-width: 100%;
   border-radius: 14px;
-  border: 1px solid $line;
-  background: rgba(255, 255, 255, 0.7);
-  padding: 12px 14px;
+  border: 1px solid rgba(27, 36, 51, 0.12);
+  background: rgba(255, 255, 255, 0.88);
+  padding: 12px 42px 12px 14px;
+  color: $ink;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: rgba(31, 122, 239, 0.45);
+    box-shadow: 0 0 0 3px rgba(31, 122, 239, 0.12);
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+}
+
+.chevron {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #3d4a5f;
 }

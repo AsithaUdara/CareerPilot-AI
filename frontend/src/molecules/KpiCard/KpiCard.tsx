@@ -6,12 +6,23 @@ type KpiCardProps = {
   value: string;
   hint: string;
   tone?: KpiTone;
+  icon?: string;
 };
 
-export function KpiCard({ label, value, hint, tone = "blue" }: KpiCardProps) {
+const TONE_ICONS: Record<KpiTone, string> = {
+  blue: "◎",
+  teal: "⌘",
+  amber: "▲",
+  rose: "◆"
+};
+
+export function KpiCard({ label, value, hint, tone = "blue", icon }: KpiCardProps) {
   return (
     <article className={`${styles.card} ${styles[tone]}`}>
-      <p className={styles.label}>{label}</p>
+      <div className={styles.top}>
+        <p className={styles.label}>{label}</p>
+        <span className={styles.icon}>{icon || TONE_ICONS[tone]}</span>
+      </div>
       <p className={styles.value}>{value}</p>
       <p className={styles.hint}>{hint}</p>
     </article>

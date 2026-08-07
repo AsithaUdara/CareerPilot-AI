@@ -1,13 +1,73 @@
 @use "@/styles/tokens" as *;
 
-.mark {
-  width: 42px;
-  height: 42px;
+.wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.iconFrame {
+  flex: none;
+  width: 46px;
+  height: 46px;
   border-radius: 14px;
-  display: grid;
-  place-items: center;
-  color: white;
+  overflow: hidden;
+  background: rgba(8, 18, 40, 0.92);
+  border: 1px solid rgba(31, 122, 239, 0.2);
+  box-shadow: 0 8px 18px rgba(31, 122, 239, 0.18);
+}
+
+.icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 8%;
+  display: block;
+  transform: scale(1.15);
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.name {
+  margin: 0;
   font-family: $font-display;
   font-weight: 700;
-  background: linear-gradient(145deg, $accent, $accent-2);
+  font-size: 1.05rem;
+  color: #0f2748;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.pilot {
+  color: #1f7aef;
+}
+
+.aiBadge {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  padding: 2px 7px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #1f7aef, #12b5e8);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
 }

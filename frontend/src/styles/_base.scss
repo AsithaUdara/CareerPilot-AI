@@ -6,6 +6,10 @@
   box-sizing: border-box;
 }
 
+html {
+  overflow-x: clip;
+}
+
 html,
 body,
 #root {
@@ -16,10 +20,44 @@ body {
   margin: 0;
   color: $ink;
   font-family: $font-body;
+  overflow-x: clip;
   background:
     radial-gradient(circle at 12% 18%, rgba(31, 122, 239, 0.18), transparent 32%),
     radial-gradient(circle at 88% 8%, rgba(18, 163, 154, 0.16), transparent 28%),
     linear-gradient(160deg, $bg-0, $bg-1);
+}
+
+/* Solid vertical scrollbar; no horizontal track noise */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1f7aef transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 0;
+}
+
+*::-webkit-scrollbar:horizontal {
+  height: 0;
+  display: none;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #1f7aef;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #1559c5;
+  background-clip: padding-box;
+  border: 2px solid transparent;
 }
 
 button,

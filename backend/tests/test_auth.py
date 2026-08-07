@@ -1,0 +1,144 @@
+from uuid import uuid4
+from unittest.mock import patch
+
+from fastapi.testclient import TestClient
+
+from app.config import get_settings
+from app.db import get_session
+from app.models import UserModel
+from app.services.auth import create_access_token
+
+
+def _make_user_token(email: str = "owner@careerpilot.test") -> tuple[str, str]:
+    user_id = str(uuid4())
+    with get_session() as session:
+        session.add(
+            UserModel(
+                id=user_id,
+                google_sub=f"google-{user_id}",
+                email=email,
+                name="Demo User",
+                picture_url="",
+            )
+        )
+    token = create_access_token(user_id, email)
+    return user_id, token
+
+
+def test_email_signup_and_login(client: TestClient) -> None:
+    signup = client.post(
+        "/auth/signup",
+        json={"email": "demo@careerpilot.test", "password": "secret12", "name": "Demo"},
+    )
+    assert signup.status_code == 200
+    payload = signup.json()
+    assert payload["access_token"]
+    assert payload["user"]["email"] == "demo@careerpilot.test"
+
+    again = client.post(
+        "/auth/signup",
+        json={"email": "demo@careerpilot.test", "password": "secret12", "name": "Demo"},
+    )
+    assert again.status_code == 409
+
+    login = client.post(
+        "/auth/login",
+        json={"email": "demo@careerpilot.test", "password": "secret12"},
+    )
+    assert login.status_code == 200
+    assert login.json()["user"]["name"] == "Demo"
+
+    bad = client.post(
+        "/auth/login",
+        json={"email": "demo@careerpilot.test", "password": "wrong-pass"},
+    )
+    assert bad.status_code == 401
+
+
+def test_auth_google_upsert_and_me(client: TestClient) -> None:
+    fake_claims = {
+        "sub": "google-sub-123",
+        "email": "asitha@example.com",
+        "name": "Asitha",
+        "picture": "https://example.com/a.png",
+    }
+    with patch("app.main.verify_google_id_token", return_value=fake_claims):
+        response = client.post("/auth/google", json={"id_token": "fake-token"})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["access_token"]
+    assert payload["user"]["email"] == "asitha@example.com"
+
+    me = client.get("/auth/me", headers={"Authorization": f"Bearer {payload['access_token']}"})
+    assert me.status_code == 200
+    assert me.json()["name"] == "Asitha"
+
+
+def test_me_candidates_ownership(client: TestClient, tmp_path) -> None:
+    user_id, token = _make_user_token()
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resume = tmp_path / "resume.txt"
+    # Must look like a real CV — resume guard rejects tiny/non-resume text with 422.
+    resume.write_text(
+        "\n".join(
+            [
+                "Demo User",
+                "owner@careerpilot.test",
+                "",
+                "Education",
+                "BSc Computer Science, University of Moratuwa",
+                "",
+                "Experience",
+                "Software Intern — built REST APIs with FastAPI",
+                "",
+                "Skills",
+                "Python, FastAPI, SQL, Git",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    with resume.open("rb") as resume_file:
+        upload = client.post(
+            "/resume/upload",
+            files={"file": ("Demo-User-CV.txt", resume_file, "text/plain")},
+            headers=headers,
+        )
+    assert upload.status_code == 200, upload.text
+    candidate_id = upload.json()["candidate_id"]
+
+    mine = client.get("/me/candidates", headers=headers)
+    assert mine.status_code == 200
+    rows = mine.json()
+    assert any(row["candidate_id"] == candidate_id for row in rows)
+    assert rows[0]["summary"]
+
+    # Another user cannot read this profile when auth is required
+    get_settings.cache_clear()
+    import os
+
+    os.environ["AUTH_DISABLED"] = "0"
+    get_settings.cache_clear()
+    try:
+        other_id, other_token = _make_user_token("other@example.com")
+        denied = client.get(
+            f"/candidates/{candidate_id}/profile",
+            headers={"Authorization": f"Bearer {other_token}"},
+        )
+        assert denied.status_code == 403
+        assert other_id
+    finally:
+        os.environ["AUTH_DISABLED"] = "1"
+        get_settings.cache_clear()
+
+
+def test_analyze_requires_existing_profile(client: TestClient) -> None:
+    response = client.post(
+        "/analyze",
+        json={
+            "candidate_id": "missing-candidate",
+            "target_role": "Backend Developer",
+            "seniority_level": "Junior",
+        },
+    )
+    assert response.status_code == 404

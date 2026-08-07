@@ -2,8 +2,29 @@
 
 .panel {
   @include glass;
-  padding: 20px;
+  @include glass-hover;
+  position: relative;
+  overflow: hidden;
+  padding: 22px;
   @include fade-up;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 40%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+  }
+
+  h2 {
+    font-size: 1.12rem;
+  }
+
+  h3 {
+    font-size: 1rem;
+  }
 }
 
 .span4 { grid-column: span 4; }

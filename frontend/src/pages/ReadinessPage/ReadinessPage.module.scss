@@ -1,5 +1,280 @@
-.grid {
+@use "@/styles/tokens" as *;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+  min-width: 0;
+}
+
+.kicker {
+  @include kicker;
+  margin: 0 0 4px;
+}
+
+.card {
+  @include glass;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  padding: 22px 24px;
+  border-radius: 20px;
+}
+
+/* —— Hero —— */
+
+.hero {
+  @include analysis-hero;
+}
+
+.scoreBlock {
+  @include analysis-hero-badge;
+}
+
+.scoreValue {
+  font-family: $font-display;
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: $ink;
+}
+
+.scoreLabel {
+  margin-top: 4px;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5a6578;
+}
+
+.heroCopy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.heroTitle {
+  margin: 0;
+  font-size: 1.4rem;
+  color: $ink;
+
+  span {
+    font-weight: 500;
+    color: #5a6578;
+  }
+}
+
+.heroLead {
+  @include analysis-hero-lead;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+  min-height: 42px;
+  align-items: center;
+
+  @media (max-width: 820px) {
+    justify-content: center;
+  }
+}
+
+/* —— Shared sections —— */
+
+.sectionHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 1.12rem;
+  color: $ink;
+}
+
+.linkRow {
+  display: flex;
+  gap: 14px;
+
+  a {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: #1559c5;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.fieldLabel {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5a6578;
+}
+
+.strength {
+  color: #0c8f87;
+}
+
+.bodyText {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #3d4a5f;
+}
+
+.textBtn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  width: fit-content;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 650;
+  color: #1559c5;
+  cursor: pointer;
+  margin-top: 4px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.profileGrid {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 16px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 24px;
+
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.profileMain,
+.profileSide {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.compactList,
+.bulletList {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: $ink;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+/* —— Explainability —— */
+
+.explainGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.explainItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(248, 251, 255, 0.95);
+  border: 1px solid rgba(31, 122, 239, 0.12);
+}
+
+.explainText {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #3d4a5f;
+}
+
+/* —— Agent insights —— */
+
+.segment {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(27, 36, 51, 0.06);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.segmentBtn {
+  border: 0;
+  background: transparent;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 650;
+  color: #3d4a5f;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+
+  &:hover {
+    color: #1559c5;
+  }
+}
+
+.segmentActive {
+  color: #1559c5;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(27, 36, 51, 0.1);
+}
+
+.insightCols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.insightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(27, 36, 51, 0.08);
+}
+
+.moreHint {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #5a6578;
 }

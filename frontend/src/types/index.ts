@@ -1,10 +1,30 @@
 export type PageId =
+  | "landing"
   | "dashboard"
   | "upload"
   | "readiness"
   | "gaps"
   | "plan"
-  | "reports";
+  | "reports"
+  | "mentor"
+  | "analytics"
+  | "insights";
+
+export type UploadStep = "intake" | "review" | "running" | "done";
+
+export type AuthUser = {
+  id: string;
+  email: string;
+  name: string;
+  picture_url: string;
+};
+
+export type CandidateSummary = {
+  candidate_id: string;
+  filename: string;
+  summary: string;
+  created_at?: string | null;
+};
 
 export type AgentOutput = {
   name: string;
@@ -12,6 +32,7 @@ export type AgentOutput = {
   gaps: string[];
   recommendations: string[];
   evidence: string[];
+  interview_tags?: Record<string, string[]>;
 };
 
 export type CandidateProfile = {
@@ -21,16 +42,34 @@ export type CandidateProfile = {
   education: string[];
   projects: string[];
   experience: string[];
+  github_url?: string;
+  linkedin_url?: string;
+};
+
+export type MatchedJob = {
+  id: string;
+  label: string;
+  company: string;
+  url: string;
+  required_skills: string[];
+  description_snippet: string;
+  match_score?: number | null;
+  source: string;
 };
 
 export type CareerReadinessReport = {
   report_id?: string | null;
   candidate_id: string;
   target_role: string;
+  seniority_level?: string;
+  stack_emphasis?: string[];
   profile: CandidateProfile;
   agent_outputs: AgentOutput[];
   seven_day_plan: string[];
   explainability: Record<string, string>;
+  matched_jobs?: MatchedJob[];
+  readiness_score?: number | null;
+  job_source?: string;
 };
 
 export type ReportSummary = {
@@ -44,6 +83,7 @@ export type UploadResponse = {
   candidate_id: string;
   filename: string;
   message: string;
+  profile?: CandidateProfile | null;
 };
 
 export type AnalyzeJobAccepted = {
@@ -56,12 +96,70 @@ export type AnalysisJobStatus = {
   job_id: string;
   candidate_id: string;
   target_role: string;
+  seniority_level?: string;
   status: string;
   stage: string;
   progress: number;
   message: string;
   report_id?: string | null;
   error?: string | null;
+};
+
+export type MentorChatMessage = {
+  role: "user" | "assistant" | string;
+  content: string;
+};
+
+export type MentorChatResponse = {
+  reply: string;
+  suggestions: string[];
+};
+
+export type ReadinessPoint = {
+  report_id: string;
+  target_role: string;
+  readiness_score: number;
+  created_at?: string | null;
+  top_gaps: string[];
+};
+
+export type RoleCount = {
+  role: string;
+  count: number;
+};
+
+export type GapFrequency = {
+  gap: string;
+  count: number;
+  status: "persistent" | "improving" | "new" | "current" | string;
+};
+
+export type CareerAnalytics = {
+  candidate_id: string;
+  report_count: number;
+  timeline: ReadinessPoint[];
+  recurring_gaps: string[];
+  roles_analyzed: RoleCount[];
+  score_delta?: number | null;
+  closed_gaps: string[];
+  new_gaps: string[];
+  latest_score?: number | null;
+  best_score?: number | null;
+  average_score?: number | null;
+  latest_role?: string;
+  skills_tracked?: number;
+  matched_jobs?: number;
+  gap_frequency?: GapFrequency[];
+  next_focus?: string[];
+  insight?: string;
+};
+
+export type WorkspaceInsights = {
+  candidate_count: number;
+  report_count: number;
+  average_readiness?: number | null;
+  role_distribution: RoleCount[];
+  recent_reports: ReadinessPoint[];
 };
 
 export type KpiTone = "blue" | "teal" | "amber" | "rose";

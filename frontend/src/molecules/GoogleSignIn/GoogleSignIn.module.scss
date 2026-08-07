@@ -1,0 +1,158 @@
+@use "@/styles/tokens" as *;
+
+.buttonHost {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.menuRoot {
+  position: relative;
+}
+
+.menuTrigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(27, 36, 51, 0.12);
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 999px;
+  padding: 4px 10px 4px 4px;
+  font: inherit;
+  cursor: pointer;
+  color: $ink;
+  box-shadow: 0 4px 14px rgba(27, 36, 51, 0.06);
+
+  &:hover {
+    border-color: rgba(31, 122, 239, 0.35);
+    background: #fff;
+  }
+}
+
+.triggerName {
+  max-width: 120px;
+  font-size: 0.84rem;
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 2px;
+  border-radius: 999px;
+  background: rgba(31, 122, 239, 0.12);
+  color: #1559c5;
+  transition: transform 180ms ease, background 180ms ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+  background: rgba(31, 122, 239, 0.2);
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.avatarFallback {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.82rem;
+  background: linear-gradient(135deg, $accent, $violet);
+  color: #fff;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  min-width: 220px;
+  padding: 8px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(27, 36, 51, 0.1);
+  box-shadow: 0 18px 40px rgba(20, 40, 80, 0.18);
+  backdrop-filter: blur(12px);
+}
+
+.menuHeader {
+  padding: 10px 12px 12px;
+  border-bottom: 1px solid rgba(27, 36, 51, 0.08);
+  margin-bottom: 6px;
+}
+
+.name {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: $ink;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.email {
+  margin: 2px 0 0;
+  font-size: 0.75rem;
+  color: #5a6578;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menuItem {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: $ink;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(31, 122, 239, 0.08);
+  }
+}
+
+.menuItemDanger {
+  color: #a12d3f;
+
+  &:hover {
+    background: rgba(220, 68, 90, 0.08);
+  }
+}
+
+.signInBtn {
+  border: 1px solid rgba(31, 122, 239, 0.28);
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1559c5;
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(31, 122, 239, 0.45);
+    background: #fff;
+  }
+}

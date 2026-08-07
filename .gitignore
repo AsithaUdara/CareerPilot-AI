@@ -6,6 +6,11 @@ backend/.env
 frontend/.env
 frontend/.env.local
 
+# --- Local docs / test fixtures (do not commit) ---
+Invictus_proposal.pdf
+backend/e2e_resume*.txt
+backend/sample_resume_test.txt
+
 # --- Python / backend ---
 backend/.venv/
 .venv/
@@ -34,6 +39,8 @@ backend/*.sqlite
 backend/uploads/
 backend/*.db
 backend/test_careerpilot.db
+backend/qdrant_data/
+backend/test_qdrant_data/
 *.db
 
 # --- Node / frontend ---

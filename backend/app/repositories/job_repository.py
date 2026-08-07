@@ -2,15 +2,23 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from app.constants import normalize_seniority
 from app.models import AnalysisJobModel
 from app.pipeline.stages import PipelineStage, stage_progress
 
 
-def create_job(session: Session, job_id: str, candidate_id: str, target_role: str) -> AnalysisJobModel:
+def create_job(
+    session: Session,
+    job_id: str,
+    candidate_id: str,
+    target_role: str,
+    seniority_level: str = "Junior",
+) -> AnalysisJobModel:
     job = AnalysisJobModel(
         job_id=job_id,
         candidate_id=candidate_id,
         target_role=target_role,
+        seniority_level=normalize_seniority(seniority_level),
         status="queued",
         stage=PipelineStage.QUEUED.value,
         progress=stage_progress(PipelineStage.QUEUED),
