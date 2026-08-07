@@ -204,8 +204,6 @@ npm run build
 - Adzuna Jobs API — [developer.adzuna.com](https://developer.adzuna.com/)
 - Frameworks: FastAPI, LangGraph/LangChain, Celery, React, Qdrant, PostgreSQL
 
-Ensure your competition submission complies with each provider’s terms. Do **not** commit `backend/.env` (API keys).
-
 ---
 
 ## Future plans (next phase)
