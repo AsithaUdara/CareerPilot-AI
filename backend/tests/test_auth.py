@@ -79,14 +79,32 @@ def test_me_candidates_ownership(client: TestClient, tmp_path) -> None:
     headers = {"Authorization": f"Bearer {token}"}
 
     resume = tmp_path / "resume.txt"
-    resume.write_text("Skills\nPython, FastAPI\nEducation\nUOM", encoding="utf-8")
+    # Must look like a real CV — resume guard rejects tiny/non-resume text with 422.
+    resume.write_text(
+        "\n".join(
+            [
+                "Demo User",
+                "owner@careerpilot.test",
+                "",
+                "Education",
+                "BSc Computer Science, University of Moratuwa",
+                "",
+                "Experience",
+                "Software Intern — built REST APIs with FastAPI",
+                "",
+                "Skills",
+                "Python, FastAPI, SQL, Git",
+            ]
+        ),
+        encoding="utf-8",
+    )
     with resume.open("rb") as resume_file:
         upload = client.post(
             "/resume/upload",
-            files={"file": ("resume.txt", resume_file, "text/plain")},
+            files={"file": ("Demo-User-CV.txt", resume_file, "text/plain")},
             headers=headers,
         )
-    assert upload.status_code == 200
+    assert upload.status_code == 200, upload.text
     candidate_id = upload.json()["candidate_id"]
 
     mine = client.get("/me/candidates", headers=headers)
