@@ -121,7 +121,9 @@
 
 .nav {
   display: grid;
-  gap: 6px;
+  gap: 4px;
+  align-content: start;
+  align-items: stretch;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
